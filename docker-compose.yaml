@@ -1,0 +1,30 @@
+version: "3.3"
+
+services:
+  crawler_default:
+    container_name: dw-crawler-default
+    hostname: dw-crawler-default
+    restart: always
+    environment:
+      - DW_DEFAULT_TOR_CRAWLER_WORKERS_NUM=10
+      - DW_DEFAULT_TOR_CRAWLER_RANDOM_DELAY_RANGE=defaultRandomDelayRange
+      - DW_DEFAULT_TOR_CRAWLER_REPOSITORY=sql
+      - DW_DEFAULT_TOR_CRAWLER_DSN=default_dsn
+      - DW_DEFAULT_CRAWLER_RANDOM_HEADER_TYPE=defaultRandom
+      - DW_DEFAULT_TOR_CRAWLER_ENGINE=ce
+      - DW_DEFAULT_TOR_CRAWLER_SCHEDULE=schedule
+    expose:
+      - "3009"
+      - "4000"
+    image: dwimages29a/dw-crawler-default-service
+    networks:
+      - dw-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10k"
+        max-file: "10"
+
+networks:
+  dw-network:
+    driver: bridge

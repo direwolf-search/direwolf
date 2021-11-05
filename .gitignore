@@ -1,1 +1,5 @@
 .idea
+.DS_Store
+notes/
+cmd/loader/
+config.yaml
