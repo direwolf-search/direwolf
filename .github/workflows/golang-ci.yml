@@ -4,12 +4,12 @@ on:
   push:
     #$default-branch
     branches:
-      - main
+      - master
       - crawler
   pull_request:
     branches:
       - main
-      - crawler
+      - master
 
 jobs:
 
