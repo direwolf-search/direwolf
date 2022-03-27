@@ -2,8 +2,6 @@ package ce
 
 import (
 	"context"
-	"direwolf/internal/domain/service/crawler"
-	"direwolf/internal/pkg/helpers"
 	"errors"
 	"log"
 	"net/http"
@@ -23,6 +21,7 @@ import (
 	rd "direwolf/internal/pkg/crawler/random_delay"
 	rh "direwolf/internal/pkg/crawler/random_headers"
 	"direwolf/internal/pkg/generic"
+	"direwolf/internal/pkg/helpers"
 	"direwolf/internal/pkg/links"
 )
 
@@ -54,7 +53,7 @@ type CollyEngine struct {
 	sync.RWMutex
 }
 
-func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) crawler.Engine /**CollyEngine*/ {
+func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) *CollyEngine {
 	var (
 		torLimitRule = &colly.LimitRule{
 			DomainRegexp: links.GetOnionV3URLPatternString(),

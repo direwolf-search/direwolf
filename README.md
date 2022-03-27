@@ -1,6 +1,6 @@
 # direwolf
 
-**direwolf** - darkweb search engine. Project's development is in progress now.
+**direwolf** - dark-web search engine. Project's development is in progress now.
 
 Copyright 2020-2021 hIMEI
 
