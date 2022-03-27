@@ -10,7 +10,7 @@ import (
 	"direwolf/internal/domain/model/host"
 	"direwolf/internal/domain/model/link"
 	"direwolf/internal/pkg/helpers"
-	"direwolf/internal/pkg/network/torproxy"
+	"direwolf/internal/pkg/links"
 )
 
 type parser struct{}
@@ -38,7 +38,7 @@ func (p *parser) GetLinks(node *html.Node, url string) []*link.Link {
 }
 
 func (p *parser) IsOnionLink(href string) bool {
-	return torproxy.GetOnionV3URLPattern().MatchString(href)
+	return links.GetOnionV3URLPattern().MatchString(href)
 }
 
 func (p *parser) getH1(node *html.Node) string {

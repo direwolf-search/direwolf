@@ -20,7 +20,8 @@ import (
 	parser "direwolf/internal/pkg/crawler/html_parser"
 	rd "direwolf/internal/pkg/crawler/random_delay"
 	rh "direwolf/internal/pkg/crawler/random_headers"
-	"direwolf/internal/pkg/network/torproxy"
+	"direwolf/internal/pkg/generic"
+	"direwolf/internal/pkg/links"
 )
 
 var (
@@ -39,6 +40,7 @@ type CollyConfig interface {
 
 type CollyEngine struct {
 	queue                     *Queue
+	repo                      generic.CommonRepository
 	engine                    *colly.Collector
 	htmlParser                parser.HTMLParser
 	workersNum                int
@@ -53,7 +55,7 @@ type CollyEngine struct {
 func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) /*crawler.Engine*/ *CollyEngine {
 	var (
 		torLimitRule = &colly.LimitRule{
-			DomainRegexp: torproxy.GetOnionV3URLPatternString(),
+			DomainRegexp: links.GetOnionV3URLPatternString(),
 		}
 		clearNetLimitRule = &colly.LimitRule{}
 	)
@@ -61,7 +63,7 @@ func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) /*
 	collyCollector := colly.NewCollector(
 		colly.Debugger(&debug.LogDebugger{}),
 		colly.Async(true),
-		colly.URLFilters(torproxy.GetOnionV3URLPattern()),
+		colly.URLFilters(links.GetOnionV3URLPattern()),
 	)
 
 	return &CollyEngine{
