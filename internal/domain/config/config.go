@@ -6,3 +6,5 @@ type Config interface {
 	WorkersNum() int
 	TorGate() string
 }
+
+// CI test
