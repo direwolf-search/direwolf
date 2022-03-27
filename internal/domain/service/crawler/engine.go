@@ -14,10 +14,10 @@ type Engine interface {
 	SetParallelism(workersNum int)
 	SetTorGate(gate string)
 	SetHTMLParser(parser interface{})
-	Visit(ctx context.Context, f func(ctx context.Context, entity interface{}) error, url string)
-	VisitAll(ctx context.Context, f func(ctx context.Context, entity interface{}) error, urls ...string)
-	SaveLink(ctx context.Context, f func(ctx context.Context, entity interface{}) error, l *link.Link) error
-	SaveHost(ctx context.Context, f func(ctx context.Context, entity interface{}) error, h *host.Host) error
+	Visit(ctx context.Context, url string)
+	VisitAll(ctx context.Context, urls ...string)
+	SaveLink(ctx context.Context, l *link.Link) error
+	SaveHost(ctx context.Context, h *host.Host) error
 	SetQueue()
 	Init( /*c config.Config*/ )
 	GetName() string

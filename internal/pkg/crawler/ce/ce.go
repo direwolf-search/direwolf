@@ -2,6 +2,8 @@ package ce
 
 import (
 	"context"
+	"direwolf/internal/domain/service/crawler"
+	"direwolf/internal/pkg/helpers"
 	"errors"
 	"log"
 	"net/http"
@@ -52,7 +54,7 @@ type CollyEngine struct {
 	sync.RWMutex
 }
 
-func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) /*crawler.Engine*/ *CollyEngine {
+func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) crawler.Engine /**CollyEngine*/ {
 	var (
 		torLimitRule = &colly.LimitRule{
 			DomainRegexp: links.GetOnionV3URLPatternString(),
@@ -115,7 +117,6 @@ func (cen *CollyEngine) SetHTMLParser(p interface{}) {
 
 func (cen *CollyEngine) Visit(
 	ctx context.Context,
-	f func(ctx context.Context, entity interface{}) error,
 	url string,
 ) {
 	var (
@@ -132,13 +133,13 @@ func (cen *CollyEngine) Visit(
 				Method:  "GET",
 			}
 			if len(arg) == 1 {
-				err = cen.queue.AddRequest(ctx, arg[0], req, f)
+				err = cen.queue.AddRequest(ctx, arg[0], req, cen.repo.Insert)
 				if err != nil {
 					return err
 				}
 			}
 			if len(arg) == 0 {
-				err = cen.queue.AddRequest(ctx, nil, req, f)
+				err = cen.queue.AddRequest(ctx, nil, req, cen.repo.Insert)
 				if err != nil {
 					return err
 				}
@@ -166,7 +167,7 @@ func (cen *CollyEngine) Visit(
 		}
 
 		//err = cen.repo.Insert(ctx, h)
-		err = cen.SaveHost(ctx, f, h)
+		err = cen.SaveHost(ctx, h)
 		if err != nil {
 			log.Println(err)
 		}
@@ -182,7 +183,7 @@ func (cen *CollyEngine) Visit(
 			Snippet: e.Text,
 			IsV3:    true,
 		}
-		err := cen.SaveLink(ctx, f, l)
+		err := cen.SaveLink(ctx, l)
 		if err != nil {
 			log.Println(err)
 		}
@@ -220,9 +221,9 @@ func (cen *CollyEngine) Visit(
 	cen.engine.Wait()
 }
 
-func (cen *CollyEngine) VisitAll(ctx context.Context, f func(ctx context.Context, entity interface{}) error, urls ...string) {
+func (cen *CollyEngine) VisitAll(ctx context.Context, urls ...string) {
 	for _, u := range urls {
-		cen.Visit(ctx, f, u)
+		cen.Visit(ctx, u)
 	}
 }
 
@@ -241,12 +242,41 @@ func (cen *CollyEngine) SetQueue() {
 	cen.queue = NewQueue(cen.workersNum)
 }
 
-func (cen *CollyEngine) SaveLink(ctx context.Context, f func(ctx context.Context, entity interface{}) error, l *link.Link) error {
-	return f(ctx, l)
+func (cen *CollyEngine) SaveLink(ctx context.Context, l *link.Link) error {
+	err := cen.repo.Insert(ctx, l)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (cen *CollyEngine) SaveHost(ctx context.Context, f func(ctx context.Context, entity interface{}) error, h *host.Host) error {
-	return f(ctx, h)
+func (cen *CollyEngine) SaveHost(ctx context.Context, h *host.Host) error {
+	exits, err := cen.repo.Exists(ctx, h.URL)
+	if err != nil {
+		return err
+	}
+
+	if !exits {
+		err := cen.repo.Insert(ctx, h)
+		if err != nil {
+			return err
+		}
+	} else {
+		updated, err := cen.repo.Updated(ctx, h.URL, helpers.GetMd5(h.Body))
+		if err != nil {
+			return err
+		}
+
+		if updated {
+			err := cen.repo.Update(ctx, h.URL)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (cen *CollyEngine) GetName() string {

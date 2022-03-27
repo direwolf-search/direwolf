@@ -8,7 +8,7 @@ type Host struct {
 	Links      []map[string]interface{}
 	Body       string
 	Hash       string
-	Text       string
+	Text       string // TODO:
 	Status     bool
 	HTTPStatus string
 	// Keywords

@@ -67,7 +67,7 @@ func (p *parser) ParseHTML(url string, body []byte) (*host.Host, error) {
 
 	//h.Links = p.getLinks(doc, url)
 	h.Body = string(body)
-	h.Text = p.trimTags(string(body))
+	h.Text = p.trimTags(string(body)) // TODO:
 	h.Status = true
 	h.URL = url
 	h.Title = p.getTitle(doc)
