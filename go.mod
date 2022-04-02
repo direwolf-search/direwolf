@@ -7,7 +7,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/grokify/html-strip-tags-go v0.0.1
-	github.com/robfig/cron v1.2.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/uptrace/bun v1.1.2
 	github.com/uptrace/bun/dialect/mysqldialect v1.1.2
 	github.com/uptrace/bun/extra/bundebug v1.1.2

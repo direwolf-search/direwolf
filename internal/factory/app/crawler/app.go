@@ -5,7 +5,7 @@ import (
 	"direwolf/internal/domain/model/task"
 	"log"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 
 	"direwolf/internal/domain/usecases/crawl"
 	"direwolf/internal/factory/app"
@@ -13,7 +13,7 @@ import (
 
 type appCrawler struct {
 	crawlerUseCase *crawl.UseCaseCrawl
-	tasks          []*task.CrawlerTask
+	tasks          []*task.CrawlerTask // TODO: taskpool
 }
 
 func NewAppCrawler(useCase *crawl.UseCaseCrawl, tasks ...*task.CrawlerTask) app.App {
@@ -25,11 +25,13 @@ func NewAppCrawler(useCase *crawl.UseCaseCrawl, tasks ...*task.CrawlerTask) app.
 
 func (ac *appCrawler) Do(ctx context.Context) {
 	go func() {
+		ac.crawlerUseCase.Crawler.GetTask()
 		ac.crawlerUseCase.Run(ctx)
 
 		for _, task := range ac.tasks {
 			cron := cron.New()
-			if err := cron.AddFunc(task.Schedule(), func() {
+			if _, err := cron.AddFunc(task.Schedule(), func() {
+				ac.crawlerUseCase.Crawler.GetTask() // TODO: next steps
 				ac.crawlerUseCase.Run(ctx)
 			}); err != nil {
 				log.Println("Error adding to cron:", err)

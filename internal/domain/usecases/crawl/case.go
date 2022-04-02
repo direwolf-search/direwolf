@@ -9,7 +9,7 @@ import (
 
 type UseCaseCrawl struct {
 	Crawler    crawler.Crawler
-	Repository repository.Repository
+	Repository repository.Repository // TODO: taskpool???
 }
 
 func NewUseCase(c crawler.Crawler, r repository.Repository) *UseCaseCrawl {
@@ -19,7 +19,8 @@ func NewUseCase(c crawler.Crawler, r repository.Repository) *UseCaseCrawl {
 	}
 }
 
+// ...
 func (ucc *UseCaseCrawl) Run(ctx context.Context) {
 	//ucc.Crawler.VisitAll(ctx, ucc.Repository.Insert, ucc.UrlsSource...)
-	ucc.Crawler.DoTasks() // TODO:
+	ucc.Crawler.DoTasks() // TODO: arguments???
 }
