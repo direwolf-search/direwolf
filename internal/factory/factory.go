@@ -1,9 +1,10 @@
 package factory
 
 import (
-	"direwolf/internal/factory/app"
 	"reflect"
 	"strings"
+
+	"direwolf/internal/factory/app"
 )
 
 // AppFactory ...

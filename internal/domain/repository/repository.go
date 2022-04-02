@@ -2,9 +2,6 @@ package repository
 
 import (
 	"context"
-
-	"direwolf/internal/domain/model/host"
-	"direwolf/internal/domain/model/link"
 )
 
 // Repository ...
@@ -13,6 +10,7 @@ type Repository interface {
 	Updated(ctx context.Context, url, md5hash string) (bool, error)
 	Exists(ctx context.Context, url string) (bool, error)
 	Update(ctx context.Context, url string) error
-	host.HostRepository
-	link.LinkRepository
+	HostRepository
+	LinkRepository
+	CrawlerTaskPoolRepository
 }

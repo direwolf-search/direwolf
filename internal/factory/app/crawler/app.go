@@ -2,11 +2,11 @@ package crawler
 
 import (
 	"context"
-	"direwolf/internal/domain/model/task"
 	"log"
 
 	"github.com/robfig/cron/v3"
 
+	"direwolf/internal/domain/model/task"
 	"direwolf/internal/domain/usecases/crawl"
 	"direwolf/internal/factory/app"
 )
@@ -40,7 +40,7 @@ func (ac *appCrawler) Do(ctx context.Context) {
 		}
 
 		<-ctx.Done()
-		log.Println("Shutdown service")
+		log.Println("Crawler finished")
 
 	}()
 }

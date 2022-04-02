@@ -114,10 +114,7 @@ func (cen *CollyEngine) SetHTMLParser(p interface{}) {
 	}
 }
 
-func (cen *CollyEngine) Visit(
-	ctx context.Context,
-	url string,
-) {
+func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	var (
 		addRequestToQueue = func(ctx context.Context, someUrl string, arg ...interface{}) error {
 			u, err := neturl.Parse(someUrl)
@@ -220,13 +217,13 @@ func (cen *CollyEngine) Visit(
 	cen.engine.Wait()
 }
 
-func (cen *CollyEngine) VisitAll(ctx context.Context, urls ...string) {
+func (cen *CollyEngine) VisitAll(ctx context.Context, urls ...string) { // TODO: without walk through slice
 	for _, u := range urls {
 		cen.Visit(ctx, u)
 	}
 }
 
-func (cen *CollyEngine) Init() {
+func (cen *CollyEngine) Init() { // TODO: ???????
 	if cen.isTor {
 		cen.SetTorGate(cen.torGate)
 	}

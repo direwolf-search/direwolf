@@ -10,17 +10,22 @@ type CrawlerTask struct {
 	dateCompleted time.Time
 	body          []string
 	schedule      string
-	once          bool
-	complete      bool
+	skipNew       bool
 }
 
-func NewCrawlerTask(n string, b []string, o bool) *CrawlerTask {
+func NewCrawlerTask(name, schedule string, skipNew bool) *CrawlerTask {
 	return &CrawlerTask{
-		name:        n,
+		name:        name,
 		dateCreated: time.Now(),
-		body:        b,
-		once:        o,
+		schedule:    schedule,
+		skipNew:     skipNew,
 	}
+}
+
+func (ct *CrawlerTask) FillBody(links []string) error {
+	ct.body = links
+
+	return nil
 }
 
 func (ct *CrawlerTask) Name() string {
@@ -41,12 +46,4 @@ func (ct *CrawlerTask) DateCreated() time.Time {
 
 func (ct *CrawlerTask) DateCompleted() time.Time {
 	return ct.dateCompleted
-}
-
-func (ct *CrawlerTask) Once() bool {
-	return ct.once
-}
-
-func (ct *CrawlerTask) Complete() bool {
-	return ct.complete
 }

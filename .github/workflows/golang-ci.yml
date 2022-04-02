@@ -8,8 +8,8 @@ on:
       - crawler
   pull_request:
     branches:
-      - main
       - master
+      - crawler
 
 jobs:
 
