@@ -19,5 +19,6 @@ func (s *service) DoTasks() {
 }
 
 func (s *service) GetTask() {
-	return
+	//TODO implement me
+	panic("implement me")
 }

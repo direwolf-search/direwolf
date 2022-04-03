@@ -10,15 +10,15 @@ type CrawlerTask struct {
 	dateCompleted time.Time
 	body          []string
 	schedule      string
-	skipNew       bool
+	skipNext      bool
 }
 
-func NewCrawlerTask(name, schedule string, skipNew bool) *CrawlerTask {
+func NewCrawlerTask(name, schedule string, skipNext bool) *CrawlerTask {
 	return &CrawlerTask{
 		name:        name,
 		dateCreated: time.Now(),
 		schedule:    schedule,
-		skipNew:     skipNew,
+		skipNext:    skipNext,
 	}
 }
 
