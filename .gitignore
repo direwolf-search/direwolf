@@ -1,4 +1,6 @@
 .idea
-.DS_Storea
+.DS_Store
+notes/
+cmd/loader/
 config.yaml
-notes
+change.log
