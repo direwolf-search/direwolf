@@ -4,3 +4,5 @@ notes/
 cmd/loader/
 config.yaml
 change.log
+docs/openapi2protofiles/
+build/generated/
