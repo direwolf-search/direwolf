@@ -13,4 +13,8 @@ type LinkRepository interface {
 	GetLinksByHost(context.Context, int64) ([]*link.Link, error)
 	GetAllLinks(context.Context) ([]*link.Link, error)
 	DeleteLink(context.Context, int64) error
+	Insert(ctx context.Context, entity map[string]interface{}) error
+	Updated(ctx context.Context, url, md5hash string) (bool, error)
+	Exists(ctx context.Context, url string) (bool, error)
+	Update(ctx context.Context, entity map[string]interface{}) error
 }

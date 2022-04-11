@@ -1,0 +1,75 @@
+syntax = "proto3";
+package crawler_task_pool.v1;
+
+import "google/api/annotations.proto";
+import "";
+
+option go_package = "protos/taskpool";
+
+message CrawlerTask {
+  string name = 1;
+  string schedule = 2;
+  bool skipNext = 3;
+  string rule = 4;
+}
+
+message GetTasksRequest {
+}
+
+message SetTaskRequest {
+  CrawlerTask task = 1;
+}
+
+message SetTaskResponse {
+  string code = 1;
+}
+
+message FillTaskRequest {
+  CrawlerTask task = 1;
+}
+
+message FillTaskResponse {
+  CrawlerTask task = 1;
+}
+
+message GetTasksResponse {
+  repeated CrawlerTask tasks = 1;
+}
+
+message ScheduleTaskRequest {
+  CrawlerTask task = 1;
+}
+
+message ScheduleTaskResponse {
+  // ...
+  string code = 1;
+}
+
+service CrawlerTaskPool {
+  rpc GetTasks(GetTasksRequest) returns (GetTasksResponse){
+    option (google.api.http) = {
+      get: "/v1/crawler/tasks/get"
+    };
+  }
+
+  rpc SetTasks(SetTaskRequest) returns (SetTaskResponse){
+    option (google.api.http) = {
+      post: "/v1/crawler/task/set"
+      body: "task"
+    };
+  }
+
+  rpc FillTask(SetTaskRequest) returns (FillTaskResponse){
+    option (google.api.http) = {
+      post: "/v1/crawler/task/fill"
+      body: "task"
+    };
+  }
+
+  rpc ScheduleTask(ScheduleTaskRequest) returns (ScheduleTaskResponse){
+    option (google.api.http) = {
+      post: "/v1/crawler/task/schedule"
+      body: "task"
+    };
+  }
+}

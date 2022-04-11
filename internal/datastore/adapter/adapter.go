@@ -6,7 +6,7 @@ import (
 	"direwolf/internal/datastore/models"
 	"direwolf/internal/domain/model/host"
 	"direwolf/internal/domain/model/link"
-	"direwolf/internal/domain/model/starter"
+	//"direwolf/internal/domain/model/starter"
 )
 
 type Adapter struct{}
@@ -32,10 +32,10 @@ func (a *Adapter) ConvertLinkToModel(linkEntity *link.Link) *models.Link {
 	}
 }
 
-func (a *Adapter) ConvertStarterToModel(starterEntity *starter.Starter) *models.Starter {
-	return &models.Starter{
-		Body:      starterEntity.Body,
-		CreatedAt: time.Time{},
-		UpdatedAt: time.Time{},
-	}
-}
+//func (a *Adapter) ConvertStarterToModel(starterEntity *starter.Starter) *models.Starter {
+//	return &models.Starter{
+//		Body:      starterEntity.Body,
+//		CreatedAt: time.Time{},
+//		UpdatedAt: time.Time{},
+//	}
+//}

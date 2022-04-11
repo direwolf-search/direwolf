@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package crawler;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "protos/crawler";
+
+message Host {
+    string content_type = 1;
+    string domain = 2;
+    string h1 = 3;
+    string hash = 4;
+    string http_status = 5;
+    repeated Link links = 6;
+    bool links_collection = 7;
+    map<string,string> meta = 8;
+    bool status = 9;
+    string text = 10;
+    string title = 11;
+    string url = 12;
+}
+
+message Link {
+    string body = 1;
+    string from = 2;
+    bool is_v3 = 3;
+    string snippet = 4;
+}
+
+message SaveHostRequest {
+    // Host instance to save ...
+    Host host = 1;
+}
+
+message SaveLinkRequest {
+    // Link instance to save
+    Link link = 1;
+}
+
+message CrawlRequest {
+    repeated string links = 1;
+}
+
+service CrawlerService {
+    // saves host instance to repository
+    rpc SaveHost(SaveHostRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/api/v1/crawler/host/save"
+            body: "host"
+        };
+    }
+
+    // saves link instance to repository
+    rpc SaveLink(SaveLinkRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/api/v1/crawler/link/save"
+            body: "link"
+        };
+    }
+
+    rpc Crawl(CrawlRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            get: "/api/v1/crawler/crawl"
+            additional_bindings {
+                post: "/api/v1/crawler/crawl",
+                body: "*"
+            }
+        };
+    }
+}

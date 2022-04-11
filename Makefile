@@ -3,45 +3,44 @@ SHELL = /bin/bash
 # Definitions
 #############
 
-# protos generates gRPC API from .proto files
-
 PROTOS_SOURCE_DIR := protos
 PROTOS_TARGET_DIR := internal/protos
+# list of .proto files in its source directory
 PROTOS_FF := ${shell find ${PROTOS_SOURCE_DIR} -maxdepth 1 -type f -print -name *.proto}
+SERVICES_DIR := internal/domain/service
 
-# openapi2protos target generates .proto files from OpenApi documentation
-
-# parse arguments for openapi2protos target
-ifeq (openapi2protos,$(firstword $(MAKECMDGOALS)))
-  # use the rest as arguments for "openapi2protos"
-  OPENAPI2PROTOS_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # ...and turn them into do-nothing targets
-  $(eval $(OPENAPI2PROTOS_ARGS):;@:)
-endif
+SERVICES_FF := ${shell find ${SERVICES_DIR} -maxdepth 3 -type f -print -name *.proto}
 
 GENERATED_FROM_OPENAPI_DIR := build/generated
-OPENAPI_FILE_FULL_PATH := docs/openapi2protofiles/$(OPENAPI2PROTOS_ARGS)
-YAML := .yaml
-PROTO := .proto
-GENERATED_FILE_NAME := $(subst $(YAML),$(PROTO),$(OPENAPI2PROTOS_ARGS))
+OPENAPI_FILES_DIR := docs/openapi2protofiles
+YAML_EXT := .yaml
+PROTO_EXT := .proto
 
+SOURCES = $(SERVICES_DIR)/$(wildcard *.proto) $(wildcard */*.proto)
 
 # Targets
 ##########
 
-openapi2protofiles:
-	#...
+default: help
 
-.PHONY: protos
+.PHONY: help # -- Generates list of targets with descriptions
+help:
+	@echo ''
+	@echo 'usage: make [target] ...'
+	@echo ''
+	@echo 'Targets: '
+	@echo ''
+	@grep '^.PHONY: .* #' Makefile | sed 's/\.PHONY: \(.*\) # \(.*\)/\1 \2/' | expand -t20
+	@echo ''
 
-# generates .proto files from OpenApi documentation
-openapi2protos: openapi2protofiles
-	@openapi2proto -spec $(OPENAPI_FILE_FULL_PATH) -out $(GENERATED_FROM_OPENAPI_DIR)/$(GENERATED_FILE_NAME) -annotate
+.PHONY: generate-test # -- Generates gRPC API from .proto file
+generate-test: $(SOURCES)
+	@echo $^
 
-# generates gRPC API from .proto files
-protos: $(PROTOS_FF)
-	@echo $(PROTOS_FF)
+.PHONY: generate # -- Generates gRPC API from .proto file
+generate: $(PROTOS_FF)
 	for FILE in $(PROTOS_FF); do \
+  		echo "API for $${FILE} generated"; \
   		protoc \
             --proto_path=$(PROTOS_SOURCE_DIR)/ \
             --go_out=$(PROTOS_TARGET_DIR)/$$(basename $${FILE%.*}) \
@@ -53,3 +52,16 @@ protos: $(PROTOS_FF)
             --grpc-gateway_opt paths=source_relative \
             $$FILE; \
   	done
+
+test: $(SERVICES_FF)
+	for FILE in $(SERVICES_FF); do \
+		echo $$(dirname $${FILE}); \
+	done
+
+.PHONY: convert # -- Converts .proto files from OpenApi documentation
+convert: $(OPENAPI_FILES_DIR)/*
+	@echo 'File $^ will be converted to .proto file format'
+	@openapi2proto \
+	-spec $^ \
+	-out $(subst $(YAML_EXT),$(PROTO_EXT),$(subst $(OPENAPI_FILES_DIR),$(GENERATED_FROM_OPENAPI_DIR), $^)) \
+	-annotate \

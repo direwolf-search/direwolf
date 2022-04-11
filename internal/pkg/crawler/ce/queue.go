@@ -27,9 +27,9 @@ func NewQueue(workersNum int) *Queue {
 
 func (q *Queue) AddRequest(
 	ctx context.Context,
-	arg interface{},
+	arg map[string]interface{},
 	r *colly.Request,
-	f func(ctx context.Context, entity interface{}) error,
+	f func(ctx context.Context, entity map[string]interface{}) error,
 ) error {
 	if arg != nil {
 		err := f(ctx, arg)

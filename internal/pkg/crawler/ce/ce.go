@@ -15,12 +15,10 @@ import (
 	"github.com/gocolly/colly/v2/debug"
 	"github.com/gocolly/colly/v2/proxy"
 
-	"direwolf/internal/domain/model/host"
-	"direwolf/internal/domain/model/link"
+	"direwolf/internal/pkg/crawler/crawler_repository"
 	parser "direwolf/internal/pkg/crawler/html_parser"
 	rd "direwolf/internal/pkg/crawler/random_delay"
 	rh "direwolf/internal/pkg/crawler/random_headers"
-	"direwolf/internal/pkg/generic"
 	"direwolf/internal/pkg/helpers"
 	"direwolf/internal/pkg/links"
 )
@@ -41,7 +39,7 @@ type CollyConfig interface {
 
 type CollyEngine struct {
 	queue                     *Queue
-	repo                      generic.CommonRepository
+	repo                      crawler_repository.CrawlerRepository
 	engine                    *colly.Collector
 	htmlParser                parser.HTMLParser
 	workersNum                int
@@ -116,7 +114,7 @@ func (cen *CollyEngine) SetHTMLParser(p interface{}) {
 
 func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	var (
-		addRequestToQueue = func(ctx context.Context, someUrl string, arg ...interface{}) error {
+		addRequestToQueue = func(ctx context.Context, someUrl string, arg ...map[string]interface{}) error {
 			u, err := neturl.Parse(someUrl)
 			if err != nil {
 				return err
@@ -173,12 +171,13 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	// On every <a> element which has href attribute call callback
 	cen.engine.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		href := e.Attr("href")
-		l := &link.Link{
-			From:    url,
-			Body:    href,
-			Snippet: e.Text,
-			IsV3:    true,
+		l := map[string]interface{}{
+			"from":    url,
+			"body":    href,
+			"snippet": e.Text,
+			"is_v3":   true,
 		}
+
 		err := cen.SaveLink(ctx, l)
 		if err != nil {
 			log.Println(err)
@@ -238,7 +237,7 @@ func (cen *CollyEngine) SetQueue() {
 	cen.queue = NewQueue(cen.workersNum)
 }
 
-func (cen *CollyEngine) SaveLink(ctx context.Context, l *link.Link) error {
+func (cen *CollyEngine) SaveLink(ctx context.Context, l map[string]interface{}) error {
 	err := cen.repo.Insert(ctx, l)
 	if err != nil {
 		return err
@@ -247,25 +246,42 @@ func (cen *CollyEngine) SaveLink(ctx context.Context, l *link.Link) error {
 	return nil
 }
 
-func (cen *CollyEngine) SaveHost(ctx context.Context, h *host.Host) error {
-	exits, err := cen.repo.Exists(ctx, h.URL)
-	if err != nil {
-		return err
+func (cen *CollyEngine) SaveHost(ctx context.Context, h map[string]interface{}) error {
+	var (
+		exists    bool
+		err       error
+		url, body string
+	)
+
+	if v, ok := h["url"]; ok {
+		if s, ok := v.(string); ok {
+			url = s
+			exists, err = cen.repo.Exists(ctx, s)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	if !exits {
+	if v, ok := h["body"]; ok {
+		if s, ok := v.(string); ok {
+			body = s
+		}
+	}
+
+	if !exists {
 		err := cen.repo.Insert(ctx, h)
 		if err != nil {
 			return err
 		}
 	} else {
-		updated, err := cen.repo.Updated(ctx, h.URL, helpers.GetMd5(h.Body))
+		updated, err := cen.repo.Updated(ctx, url, helpers.GetMd5(body))
 		if err != nil {
 			return err
 		}
 
 		if updated {
-			err := cen.repo.Update(ctx, h.URL)
+			err := cen.repo.Update(ctx, h)
 			if err != nil {
 				return err
 			}

@@ -1,26 +1,26 @@
-package crawler_task_pool
+package taskpool
 
 import (
+	"direwolf/internal/domain/service/taskpool"
 	"github.com/robfig/cron/v3"
 
 	"direwolf/internal/domain/model/task"
-	"direwolf/internal/domain/service/crawler"
 )
 
 type service struct {
 	scheduler cron.Cron
 }
 
-func NewService() crawler.TaskPool {
+func NewService() taskpool.TaskPool {
 	return &service{}
 }
 
-func (s *service) AddTask(task *task.CrawlerTask) {
+func (s *service) ScheduleTask(task *task.CrawlerTask, jobFunc func()) {
 
 }
 
-func (s *service) AddJobForTask(task *task.CrawlerTask, links []string) {
-
+func (s *service) FillTask(task *task.CrawlerTask) *task.CrawlerTask {
+	return nil
 }
 
 func (s *service) GetTaskList() []*task.CrawlerTask {

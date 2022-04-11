@@ -7,8 +7,6 @@ import (
 	strip "github.com/grokify/html-strip-tags-go"
 	"golang.org/x/net/html"
 
-	"direwolf/internal/domain/model/host"
-	"direwolf/internal/domain/model/link"
 	"direwolf/internal/pkg/helpers"
 	"direwolf/internal/pkg/links"
 )
@@ -19,16 +17,22 @@ func NewParser() *parser {
 	return &parser{}
 }
 
-func (p *parser) GetLinks(node *html.Node, url string) []*link.Link {
-	var links = make([]*link.Link, 0)
+func (p *parser) GetLinks(node *html.Node, url string) []map[string]interface{} {
+	var links = make([]map[string]interface{}, 0)
 
 	hrefs := htmlquery.Find(node, "//a")
 
-	if len(hrefs) != 0 {
+	if len(hrefs) > 0 {
 		for _, a := range hrefs {
 			href := htmlquery.FindOne(a, "/@href")
 			if p.IsOnionLink(htmlquery.InnerText(href)) {
-				l := link.NewLink(url, htmlquery.InnerText(href), htmlquery.InnerText(a), true)
+				l := map[string]interface{}{
+					"from":    url,
+					"body":    htmlquery.InnerText(href),
+					"snippet": htmlquery.InnerText(a),
+					"is_v3":   true,
+				}
+
 				links = append(links, l)
 			}
 		}
@@ -54,31 +58,26 @@ func (p *parser) trimTags(body string) string {
 	return strip.StripTags(body)
 }
 
-func (p *parser) ParseHTML(url string, body []byte) (*host.Host, error) {
-	var (
-		h host.Host
-	)
-
+func (p *parser) ParseHTML(url string, body []byte) (map[string]interface{}, error) {
 	stringReader := strings.NewReader(string(body))
 	doc, err := htmlquery.Parse(stringReader)
 	if err != nil {
 		return nil, err
 	}
 
-	//h.Links = p.getLinks(doc, url)
-	h.Body = string(body)
-	h.Text = p.trimTags(string(body)) // TODO:
-	h.Status = true
-	h.URL = url
-	h.Title = p.getTitle(doc)
-	h.H1 = p.getH1(doc)
-	h.Hash = helpers.GetMd5(h.Body)
-
-	return &h, nil
+	return map[string]interface{}{
+		"body":    string(body),
+		"text":    p.trimTags(string(body)),
+		"status":  true,
+		"url":     url,
+		"title":   p.getTitle(doc),
+		"h1":      p.getH1(doc),
+		"md5hash": helpers.GetMd5(string(body)),
+	}, nil
 }
 
 type HTMLParser interface {
-	ParseHTML(url string, body []byte) (*host.Host, error)
+	ParseHTML(url string, body []byte) (map[string]interface{}, error)
 }
 
 func NewHTMLParser() HTMLParser {

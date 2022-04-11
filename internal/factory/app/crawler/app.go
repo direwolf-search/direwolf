@@ -2,24 +2,29 @@ package crawler
 
 import (
 	"context"
+	"direwolf/internal/domain/service/taskpool"
 	"log"
 
 	"github.com/robfig/cron/v3"
 
 	"direwolf/internal/domain/model/task"
-	"direwolf/internal/domain/usecases/crawl"
+	"direwolf/internal/domain/repository"
+	"direwolf/internal/domain/service/crawler"
 	"direwolf/internal/factory/app"
 )
 
 type appCrawler struct {
-	crawlerUseCase *crawl.UseCaseCrawl
-	tasks          []*task.CrawlerTask // TODO: taskpool
+	Crawler    crawler.Crawler
+	Repository repository.Repository
+	TaskPool   taskpool.TaskPool
+	tasks      []*task.CrawlerTask // TODO: taskpool
 }
 
-func NewAppCrawler(useCase *crawl.UseCaseCrawl, tasks ...*task.CrawlerTask) app.App {
+func NewAppCrawler(crawler crawler.Crawler, taskPool taskpool.TaskPool, repo repository.Repository) app.App {
 	return &appCrawler{
-		crawlerUseCase: useCase,
-		tasks:          tasks,
+		Crawler:    crawler,
+		Repository: repo,
+		TaskPool:   taskPool,
 	}
 }
 

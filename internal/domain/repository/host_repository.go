@@ -13,4 +13,8 @@ type HostRepository interface {
 	GetHostByFields(ctx context.Context, fields map[string]interface{}) ([]*host.Host, error)
 	GetAllHosts(ctx context.Context) ([]*host.Host, error)
 	DeleteHost(ctx context.Context, id int64) error
+	Insert(ctx context.Context, entity map[string]interface{}) error
+	Updated(ctx context.Context, url, md5hash string) (bool, error)
+	Exists(ctx context.Context, url string) (bool, error)
+	Update(ctx context.Context, entity map[string]interface{}) error
 }
