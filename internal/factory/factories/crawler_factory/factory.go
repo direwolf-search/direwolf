@@ -5,7 +5,7 @@ import (
 
 	"direwolf/internal/domain/repository"
 	service "direwolf/internal/domain/service/crawler"
-	"direwolf/internal/domain/usecases/crawl"
+	"direwolf/internal/domain/usecases/crawl_all"
 	"direwolf/internal/factory"
 	"direwolf/internal/factory/app"
 	app_crawler "direwolf/internal/factory/app/crawler"
@@ -21,9 +21,8 @@ func NewCrawlerFactory() factory.AppFactory {
 
 func (ef *crawlerFactory) BuildApp(components []interface{}) app.App {
 	var (
-		defaultEngineName     = os.Getenv("DW_DEFAULT_TOR_CRAWLER_ENGINE")     // TODO:
-		defaultRepositoryName = os.Getenv("DW_DEFAULT_TOR_CRAWLER_REPOSITORY") // TODO:
-		defaultSchedule       = os.Getenv("DW_DEFAULT_TOR_CRAWLER_SCHEDULE")
+		defaultEngineName     = os.Getenv("DW_DEFAULT_TOR_CRAWLER_ENGINE") // TODO:
+		defaultRepositoryName = os.Getenv("DW_DEFAULT_TOR_CRAWLER_REPOSITORY")
 		engine                service.Engine
 		repo                  repository.Repository
 	)
@@ -44,5 +43,5 @@ func (ef *crawlerFactory) BuildApp(components []interface{}) app.App {
 
 	crawler := concrete.NewService(engine)
 
-	return app_crawler.NewAppCrawler(crawl.NewUseCase(crawler, repo), defaultSchedule)
+	return app_crawler.NewAppCrawler(crawlall.NewCrawlAllUseCase(crawler, repo), defaultSchedule)
 }

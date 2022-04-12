@@ -5,4 +5,5 @@ type Repository interface {
 	HostRepository
 	LinkRepository
 	CrawlerTaskPoolRepository
+	CrawlerRepository
 }

@@ -1,17 +1,17 @@
-package taskpool
+package sheduler
 
 import (
-	"direwolf/internal/domain/service/taskpool"
 	"github.com/robfig/cron/v3"
 
 	"direwolf/internal/domain/model/task"
+	"direwolf/internal/domain/service/scheduler"
 )
 
 type service struct {
 	scheduler cron.Cron
 }
 
-func NewService() taskpool.TaskPool {
+func NewService() scheduler.Scheduler {
 	return &service{}
 }
 

@@ -5,7 +5,7 @@ import (
 )
 
 type service struct {
-	Engine crawler.Engine // TODO: taskpool
+	Engine crawler.Engine // TODO: scheduler
 }
 
 func NewService(engine crawler.Engine) crawler.Crawler {

@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-type CrawlerTask struct {
-	name          string
+type Task struct {
+	taskType      string
 	dateCreated   time.Time
 	dateCompleted time.Time
 	body          []string

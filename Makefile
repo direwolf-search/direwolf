@@ -11,8 +11,7 @@ SERVICES_DIR := internal/domain/service
 
 SERVICES_FF := ${shell find ${SERVICES_DIR} -maxdepth 3 -type f -print -name *.proto}
 
-VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null || \
-	cat $(PWD)/.version 2> /dev/null || echo v0)
+VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null)
 
 GENERATED_FROM_OPENAPI_DIR := build/generated
 OPENAPI_FILES_DIR := docs/openapi2protofiles
