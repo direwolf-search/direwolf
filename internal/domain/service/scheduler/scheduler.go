@@ -6,7 +6,6 @@ import (
 
 type Scheduler interface {
 	ScheduleTask(task *task.Task, jobFunc func())
-	FillTask(task *task.CrawlerTask) *task.CrawlerTask
 	GetTaskList(taskType string) []*task.Task
 	RemoveJob(jobID int)
 	Start()

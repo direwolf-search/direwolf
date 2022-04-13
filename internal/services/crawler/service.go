@@ -5,7 +5,7 @@ import (
 )
 
 type service struct {
-	Engine crawler.Engine // TODO: scheduler
+	Engine crawler.Engine
 }
 
 func NewService(engine crawler.Engine) crawler.Crawler {
@@ -14,11 +14,4 @@ func NewService(engine crawler.Engine) crawler.Crawler {
 	}
 }
 
-func (s *service) DoTasks() {
-	// some engine actions here
-}
-
-func (s *service) GetTask() {
-	//TODO implement me
-	panic("implement me")
-}
+func (s *service) Crawl(links []string) {}

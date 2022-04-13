@@ -1,49 +1,44 @@
+// Package task defines a model of a certain task intended for a certain service
 package task
 
-import (
-	"time"
-)
-
-type Task struct {
-	taskType      string
-	dateCreated   time.Time
-	dateCompleted time.Time
-	body          []string
-	schedule      string
-	skipNext      bool
+type typeOfTask struct {
+	// service that owns the task
+	of string
+	// link selection rule
+	rule string
 }
 
-func NewCrawlerTask(name, schedule string, skipNext bool) *CrawlerTask {
-	return &CrawlerTask{
-		name:        name,
-		dateCreated: time.Now(),
-		schedule:    schedule,
-		skipNext:    skipNext,
+// Task is a schedulable task for some service.
+type Task struct {
+	taskType *typeOfTask
+	schedule string
+	skipNext bool
+}
+
+func NewTask(taskType *typeOfTask, schedule string, skipNext bool) *Task {
+	return &Task{
+		taskType: taskType,
+		schedule: schedule,
+		skipNext: skipNext,
 	}
 }
 
-func (ct *CrawlerTask) FillBody(links []string) error {
-	ct.body = links
-
-	return nil
+// Of returns `of` field of the taskType field
+func (ct *Task) Of() string {
+	return ct.taskType.of
 }
 
-func (ct *CrawlerTask) Name() string {
-	return ct.name
+// Rule returns rule field of the taskType field
+func (ct *Task) Rule() string {
+	return ct.taskType.rule
 }
 
-func (ct *CrawlerTask) Schedule() string {
+// Schedule returns task's schedule field
+func (ct *Task) Schedule() string {
 	return ct.schedule
 }
 
-func (ct *CrawlerTask) Body() []string {
-	return ct.body
-}
-
-func (ct *CrawlerTask) DateCreated() time.Time {
-	return ct.dateCreated
-}
-
-func (ct *CrawlerTask) DateCompleted() time.Time {
-	return ct.dateCompleted
+// SkipNext returns task's skipNext field
+func (ct *Task) SkipNext() bool {
+	return ct.skipNext
 }

@@ -9,21 +9,21 @@ import (
 
 type service struct {
 	scheduler cron.Cron
+	//service maintained by the scheduler
+	of string
 }
 
-func NewService() scheduler.Scheduler {
-	return &service{}
+func NewService(of string) scheduler.Scheduler {
+	return &service{
+		of: of,
+	}
 }
 
-func (s *service) ScheduleTask(task *task.CrawlerTask, jobFunc func()) {
+func (s *service) ScheduleTask(task *task.Task, jobFunc func()) {
 
 }
 
-func (s *service) FillTask(task *task.CrawlerTask) *task.CrawlerTask {
-	return nil
-}
-
-func (s *service) GetTaskList() []*task.CrawlerTask {
+func (s *service) GetTaskList() []*task.Task {
 	//TODO implement me
 	panic("implement me")
 }

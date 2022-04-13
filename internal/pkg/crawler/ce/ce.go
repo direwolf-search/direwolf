@@ -15,7 +15,6 @@ import (
 	"github.com/gocolly/colly/v2/debug"
 	"github.com/gocolly/colly/v2/proxy"
 
-	"direwolf/internal/pkg/crawler/crawler_repository"
 	parser "direwolf/internal/pkg/crawler/html_parser"
 	rd "direwolf/internal/pkg/crawler/random_delay"
 	rh "direwolf/internal/pkg/crawler/random_headers"
@@ -37,9 +36,16 @@ type CollyConfig interface {
 	TorGate() string
 }
 
+type EngineRepository interface {
+	Insert(ctx context.Context, entity map[string]interface{}) error
+	Updated(ctx context.Context, url, md5hash string) (bool, error)
+	Exists(ctx context.Context, url string) (bool, error)
+	Update(ctx context.Context, entity map[string]interface{}) error
+}
+
 type CollyEngine struct {
 	queue                     *Queue
-	repo                      crawler_repository.CrawlerRepository
+	repo                      EngineRepository
 	engine                    *colly.Collector
 	htmlParser                parser.HTMLParser
 	workersNum                int
@@ -51,7 +57,7 @@ type CollyEngine struct {
 	sync.RWMutex
 }
 
-func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) *CollyEngine {
+func NewCollyEngine(isTor bool, repo EngineRepository, parser parser.HTMLParser, config CollyConfig) *CollyEngine {
 	var (
 		torLimitRule = &colly.LimitRule{
 			DomainRegexp: links.GetOnionV3URLPatternString(),
@@ -68,6 +74,7 @@ func NewCollyEngine(isTor bool, parser parser.HTMLParser, config CollyConfig) *C
 	return &CollyEngine{
 		engine:     collyCollector,
 		htmlParser: parser,
+		repo:       repo,
 		workersNum: config.WorkersNum(),
 		crawlerRules: map[string]*colly.LimitRule{
 			"torLimits":      torLimitRule,

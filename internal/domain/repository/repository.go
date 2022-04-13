@@ -4,6 +4,7 @@ package repository
 type Repository interface {
 	HostRepository
 	LinkRepository
-	CrawlerTaskPoolRepository
 	CrawlerRepository
+	EngineRepository
+	SchedulerRepository
 }
