@@ -5,10 +5,17 @@ import (
 )
 
 type Logger interface {
-	Info(ctx context.Context, message string, errs ...error)
-	Debug(ctx context.Context, message string, errs ...error)
-	Warning(ctx context.Context, message string, errs ...error)
-	Error(ctx context.Context, message string, errs ...error)
-	Critical(ctx context.Context, message string, errs ...error)
-	Fatal(ctx context.Context, message string, errs ...error)
+	Info(msg string, keysAndValues ...interface{})
+	Error(err error, msg string, keysAndValues ...interface{})
+	Debug(msg string, keysAndValues ...interface{})
+	Warning(msg string, keysAndValues ...interface{})
+	Critical(err error, msg string, keysAndValues ...interface{})
+	Fatal(err error, msg string, keysAndValues ...interface{})
+
+	InfoWithContext(ctx context.Context, msg string, keysAndValues ...interface{})
+	ErrorWithContext(ctx context.Context, err error, msg string, keysAndValues ...interface{})
+	DebugWithContext(ctx context.Context, msg string, keysAndValues ...interface{})
+	WarningWithContext(ctx context.Context, msg string, keysAndValues ...interface{})
+	CriticalWithContext(ctx context.Context, err error, msg string, keysAndValues ...interface{})
+	FatalWithContext(ctx context.Context, err error, msg string, keysAndValues ...interface{})
 }
