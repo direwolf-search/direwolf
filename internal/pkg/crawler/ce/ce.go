@@ -3,9 +3,9 @@ package ce
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	neturl "net/url"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -46,9 +46,14 @@ type EngineRepository interface {
 // CollyEngine is an implementation of scraping engine for crawler service.
 // Built with gocolly/colly/v2 under the hood
 type CollyEngine struct {
-	queue                     *Queue
-	repo                      EngineRepository
-	engine                    *colly.Collector
+	queue  *Queue
+	repo   EngineRepository
+	engine *colly.Collector
+	logger interface {
+		Printf(format string, ii ...interface{})
+		Error(err error, msg string, keysAndValues ...interface{})
+		Fatal(err error, msg string, keysAndValues ...interface{})
+	}
 	htmlParser                parser.HTMLParser
 	workersNum                int
 	crawlerRules              map[string]*colly.LimitRule
@@ -60,7 +65,17 @@ type CollyEngine struct {
 }
 
 // NewCollyEngine returns new instance of CollyEngine
-func NewCollyEngine(isTor bool, repo EngineRepository, parser parser.HTMLParser, config CollyConfig) *CollyEngine {
+func NewCollyEngine(
+	isTor bool,
+	repo EngineRepository,
+	parser parser.HTMLParser,
+	config CollyConfig,
+	logger interface {
+		Printf(format string, ii ...interface{})
+		Error(err error, msg string, keysAndValues ...interface{})
+		Fatal(err error, msg string, keysAndValues ...interface{})
+	},
+) *CollyEngine {
 	var (
 		torLimitRule = &colly.LimitRule{
 			DomainRegexp: links.GetOnionV3URLPatternString(),
@@ -77,6 +92,7 @@ func NewCollyEngine(isTor bool, repo EngineRepository, parser parser.HTMLParser,
 	return &CollyEngine{
 		engine:     collyCollector,
 		htmlParser: parser,
+		logger:     logger,
 		repo:       repo,
 		workersNum: config.WorkersNum(),
 		crawlerRules: map[string]*colly.LimitRule{
@@ -110,7 +126,8 @@ func (cen *CollyEngine) SetParallelism(workersNum int) {
 func (cen *CollyEngine) SetTorGate(gate string) {
 	ps, err := proxy.RoundRobinProxySwitcher(gate)
 	if err != nil {
-		log.Fatal(err)
+		cen.logger.Fatal(err, "cannot connect to Tor network: ")
+		os.Exit(1)
 	}
 
 	cen.engine.SetProxyFunc(ps)
@@ -153,11 +170,11 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	)
 	// Set error handler
 	cen.engine.OnError(func(r *colly.Response, err error) {
-		log.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		cen.logger.Error(err, "failed with response  ", r.Request.URL)
 	})
 
 	cen.engine.OnRequest(func(r *colly.Request) {
-		log.Println("visiting", r.URL)
+		cen.logger.Printf("visiting %s", r.URL)
 	})
 
 	// get full HTML page and parse it to host.Host{}
@@ -167,13 +184,13 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 		cen.Unlock()
 
 		if err != nil {
-			log.Println(err)
+			cen.logger.Error(err, "cannot parse HTML ", url)
 		}
 
 		//err = cen.repo.Insert(ctx, h)
 		err = cen.SaveHost(ctx, h)
 		if err != nil {
-			log.Println(err)
+			cen.logger.Error(err, "cannot save host ", h)
 		}
 
 	})
@@ -190,36 +207,36 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 
 		err := cen.SaveLink(ctx, l)
 		if err != nil {
-			log.Println(err)
+			cen.logger.Error(err, "cannot save link ", l)
 		}
 		ok, err := cen.engine.HasVisited(e.Request.AbsoluteURL(href))
 		if err != nil {
-			log.Println(err)
+			cen.logger.Error(err, "cannot check visited url ", e.Request.AbsoluteURL(href))
 		}
 
 		if !ok {
 			err = addRequestToQueue(ctx, e.Request.AbsoluteURL(href), l)
 			if err != nil {
-				log.Println(err)
+				cen.logger.Error(err, "cannot add url to queue ", e.Request.AbsoluteURL(href))
 			}
 		}
 	})
 
 	ok, err := cen.engine.HasVisited(url)
 	if err != nil {
-		log.Println(err)
+		cen.logger.Error(err, "cannot mark visited url ", url)
 	}
 
 	if !ok {
 		err = addRequestToQueue(ctx, url)
 		if err != nil {
-			log.Println(err)
+			cen.logger.Error(err, "cannot add url to queue ", url)
 		}
 	}
 
 	err = cen.queue.Run(cen.engine)
 	if err != nil {
-		log.Println(err)
+		cen.logger.Error(err, "cannot run queue ")
 		return
 	}
 
