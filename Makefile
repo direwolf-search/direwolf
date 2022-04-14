@@ -3,6 +3,10 @@ SHELL = /bin/bash
 # Definitions
 #############
 
+SRC_DIR := internal
+DOMAIN_SERVICES_SRC_DIR := $(SRC_DIR)/domain/service
+CONCRETE_SERVICES_SRC_DIR := $(SRC_DIR)/services
+
 PROTOS_SOURCE_DIR := protos
 PROTOS_TARGET_DIR := internal/protos
 # list of .proto files in its source directory

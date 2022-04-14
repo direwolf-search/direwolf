@@ -43,6 +43,8 @@ type EngineRepository interface {
 	Update(ctx context.Context, entity map[string]interface{}) error
 }
 
+// CollyEngine is an implementation of scraping engine for crawler service.
+// Built with gocolly/colly/v2 under the hood
 type CollyEngine struct {
 	queue                     *Queue
 	repo                      EngineRepository
@@ -57,6 +59,7 @@ type CollyEngine struct {
 	sync.RWMutex
 }
 
+// NewCollyEngine returns new instance of CollyEngine
 func NewCollyEngine(isTor bool, repo EngineRepository, parser parser.HTMLParser, config CollyConfig) *CollyEngine {
 	var (
 		torLimitRule = &colly.LimitRule{
