@@ -1,16 +1,19 @@
 package crawler
 
 import (
+	"direwolf/internal/domain/repository"
 	"direwolf/internal/domain/service/crawler"
 )
 
 type service struct {
-	Engine crawler.Engine
+	Engine     crawler.Engine
+	Repository repository.CrawlerRepository
 }
 
-func NewService(engine crawler.Engine) crawler.Crawler {
+func NewService(e crawler.Engine, r repository.CrawlerRepository) crawler.Crawler {
 	return &service{
-		Engine: engine,
+		Engine:     e,
+		Repository: r,
 	}
 }
 

@@ -22,11 +22,11 @@ func NewCrawlAllUseCase(ctx context.Context, c crawler.Crawler, r repository.Rep
 	}
 }
 
-func (ca *CrawlAllUseCase) Run() {
-	links, err := ca.Repository.GetAll(ca.Context)
+func (cauc *CrawlAllUseCase) Run() {
+	links, err := cauc.Repository.GetAll(cauc.Context)
 	if err != nil {
 		//return err
 		log.Println(err)
 	}
-	ca.Crawler.Crawl(links)
+	cauc.Crawler.Crawl(links)
 }

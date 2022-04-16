@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"context"
+	crawlall "direwolf/internal/domain/usecases/crawl_all"
 	"log"
 
 	"github.com/robfig/cron/v3"
@@ -15,19 +16,19 @@ import (
 type appCrawler struct {
 	Crawler    crawler.Crawler
 	Repository repository.Repository
-	TaskPool   scheduler.Scheduler
+	Scheduler  scheduler.Scheduler
 }
 
 func NewAppCrawler(crawler crawler.Crawler, taskPool scheduler.Scheduler, repo repository.Repository) app.App {
 	return &appCrawler{
 		Crawler:    crawler,
 		Repository: repo,
-		TaskPool:   taskPool,
+		Scheduler:  taskPool,
 	}
 }
 
 func (ac *appCrawler) Do(ctx context.Context) {
-	useCase := NewCrawlAllUseCase()
+	useCase := crawlall.NewCrawlAllUseCase(ctx, ac.Crawler, ac.Repository)
 	go func() {
 		ac.crawlerUseCase.Crawler.GetTask()
 		ac.crawlerUseCase.Run(ctx)
