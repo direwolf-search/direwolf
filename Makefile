@@ -3,43 +3,61 @@ SHELL = /bin/bash
 # Definitions
 #############
 
-SRC_DIR := internal
-DOMAIN_SERVICES_SRC_DIR := $(SRC_DIR)/domain/service
-CONCRETE_SERVICES_SRC_DIR := $(SRC_DIR)/services
+src_dir := internal
+domain_services_src_dir := $(src_dir)/domain/service
+concrete_services_src_dir := $(src_dir)/services
 
-PROTOS_SOURCE_DIR := protos
-PROTOS_TARGET_DIR := internal/protos
-# list of .proto files in its source directory
-PROTOS_FF := ${shell find ${PROTOS_SOURCE_DIR} -maxdepth 1 -type f -print -name *.proto}
-SERVICES_DIR := internal/domain/service
+protos_source_dir := protos
+protos_target_dir := internal/protos
+# list of .api files in its source directory
+protos_ff := ${shell find ${protos_source_dir} -maxdepth 1 -type f -print -name *.proto}
+services_dir := internal/domain/service
 
-SERVICES_FF := ${shell find ${SERVICES_DIR} -maxdepth 3 -type f -print -name *.proto}
+concrete_services_dir = ./internal/services
 
-VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null)
+services_ff := ${shell find ${services_dir} -maxdepth 3 -type f -print -name *.proto}
 
-GENERATED_FROM_OPENAPI_DIR := build/generated
-OPENAPI_FILES_DIR := docs/openapi2protofiles
-YAML_EXT := .yaml
-PROTO_EXT := .proto
+version ?= $(shell git describe --tags --always --match=v* 2> /dev/null)
 
-SOURCES = $(SERVICES_DIR)/$(wildcard *.proto) $(wildcard */*.proto)
+generated_from_openapi_dir := build/generated
+open_api_files_dir := docs/openapi2protofiles
+yaml_text := .yaml
+proto_text := .proto
+
+test_suffix := _test.go
+
+sources = $(services_dir)/$(wildcard *.proto) $(wildcard */*.proto)
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
-  CHANGELOG_INIT_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(CHANGELOG_INIT_ARGS):;@:)
+  changelog_init_args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(changelog_init_args):;@:)
 endif
 
 # parse arguments for changelog-finalize target
 ifeq (changelog-finalize,$(firstword $(MAKECMDGOALS)))
-  CHANGELOG_FINALIZE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(CHANGELOG_FINALIZE_ARGS):;@:)
+  changelog_finalize_args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(changelog_finalize_args):;@:)
 endif
+
+# parse arguments for changelog-finalize target
+ifeq (generate-test,$(firstword $(MAKECMDGOALS)))
+  generate_test_args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(generate_test_args):;@:)
+endif
+
+dirs := $(shell find $(concrete_services_dir) -type d -name "api")
+srcs := $(foreach d,$(dirs),$(wildcard $(d)/*.proto))
+objs := $(srcs:.cpp=.o)
 
 # Targets
 ##########
 
+
 default: help
+
+dummy-generate-test:
+	# ...
 
 dummy-changelog-init:
 	# ...
@@ -62,23 +80,23 @@ help:
 
 .PHONY: version #             -- Prints current application version, v0 if not found
 version:
-	@echo $(VERSION)
+	@echo $(version)
 
-.PHONY: generate-test #       -- Not a tests realy!
-generate-test: $(SOURCES)
+.PHONY: t-test #              -- Not a tests realy!
+t-test: $(sources)
 	@echo $^
 
-.PHONY: generate #            -- Generates gRPC API from .proto file
-generate: $(PROTOS_FF)
-	for FILE in $(PROTOS_FF); do \
+.PHONY: generate #            -- Generates gRPC API from .api file
+generate: $(protos_ff)
+	for FILE in $(protos_ff); do \
   		echo "API for $${FILE} generated"; \
   		protoc \
-            --proto_path=$(PROTOS_SOURCE_DIR)/ \
-            --go_out=$(PROTOS_TARGET_DIR)/$$(basename $${FILE%.*}) \
+            --proto_path=$(protos_source_dir)/ \
+            --go_out=$(protos_target_dir)/$$(basename $${FILE%.*}) \
             --go_opt=paths=source_relative \
-            --go-grpc_out=$(PROTOS_TARGET_DIR)/$$(basename $${FILE%.*}) \
+            --go-grpc_out=$(protos_target_dir)/$$(basename $${FILE%.*}) \
             --go-grpc_opt=paths=source_relative \
-            --grpc-gateway_out $(PROTOS_TARGET_DIR)/$$(basename $${FILE%.*}) \
+            --grpc-gateway_out $(protos_target_dir)/$$(basename $${FILE%.*}) \
             --grpc-gateway_opt logtostderr=true \
             --grpc-gateway_opt paths=source_relative \
             $$FILE; \
@@ -88,17 +106,17 @@ generate: $(PROTOS_FF)
 clean:
 	@rm -R gen
 
-test: $(SERVICES_FF)
-	for FILE in $(SERVICES_FF); do \
+test: $(services_ff)
+	for FILE in $(services_ff); do \
 		echo $$(dirname $${FILE}); \
 	done
 
-.PHONY: convert #             -- Converts .proto files from OpenApi documentation
-convert: $(OPENAPI_FILES_DIR)/*
+.PHONY: convert #             -- Converts .api files from OpenApi documentation
+convert: $(open_api_files_dir)/*
 	@echo 'File $^ will be converted to .proto file format'
 	@openapi2proto \
 	-spec $^ \
-	-out $(subst $(YAML_EXT),$(PROTO_EXT),$(subst $(OPENAPI_FILES_DIR),$(GENERATED_FROM_OPENAPI_DIR), $^)) \
+	-out $(subst $(yaml_text),$(proto_text),$(subst $(open_api_files_dir),$(generated_from_openapi_dir), $^)) \
 	-annotate \
 
 .PHONY: changelog #           -- Checks if changelog installed
@@ -117,18 +135,36 @@ changelog-install:
 	@echo "mh-cbon/changelog installed if you see its usage message"
 
 
-.PHONY: changelog-init #      -- Initialize changelog file for project. Syntax: make changelog-init [VERSION]
+.PHONY: changelog-init #      -- Initialize changelog file for project. Syntax: make changelog-init [version]
 changelog-init: dummy-changelog-init
-	@changelog init --author "Alexey 'hIMEI' Matveev" --email "himei@tuta.io" --since $(CHANGELOG_INIT_ARGS)
+	@changelog init --author "Alexey 'hIMEI' Matveev" --email "himei@tuta.io" --since $(changelog_init_args)
 
 .PHONY: changelog-prepare #   -- Prepares changelog for release.
 changelog-prepare:
 	@changelog prepare --author "Alexey 'hIMEI' Matveev" --email "himei@tuta.io"
 
-.PHONY: changelog-finalize #  -- Finalizes changelog with given version. Syntax: make changelog-finalize [VERSION]
+.PHONY: changelog-finalize #  -- Finalizes changelog with given version. Syntax: make changelog-finalize [version]
 changelog-finalize: dummy-changelog-finalize
-	@changelog finalize --version=$(CHANGELOG_FINALIZE_ARGS)
+	@changelog finalize --version=$(changelog_finalize_args)
 
 .PHONY: changelog-out #       -- Creates changelog file in md format
 changelog-out:
 	@changelog md --out=CHANGELOG.md
+
+.PHONY: gotests #             -- Checks if gotests installed
+gotests:
+	@ if ! which gotests > /dev/null; then \
+		echo "error: gotests not installed" >&2; \
+		echo "to install it run <make gotests_install>" >&2; \
+		exit 1; \
+	fi
+
+.PHONY: generate-test #       -- Generates tests for given fikle
+generate-test: dummy-generate-test
+	@gotests -all $(generate_test_args) >> $(basename $(generate_test_args))$(test_suffix)
+
+.PHONY: traverse
+traverse: $(dirs)
+	for d in $+; do \
+		echo "$$d"; \
+	done
