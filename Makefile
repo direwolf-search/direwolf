@@ -2,7 +2,7 @@
 SHELL = /bin/bash
 
 # prerequisites
-#############
+###############
 
 # dirs
 SRC_DIR := internal
@@ -31,6 +31,12 @@ ifeq (push-bitbucket,$(firstword $(MAKECMDGOALS)))
   $(eval $(PUSH_BITBUCKET_ARGS):;@:)
 endif
 
+# parse arguments for push-origin target
+ifeq (push-origin,$(firstword $(MAKECMDGOALS)))
+  PUSH_ORIGIN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(PUSH_ORIGIN_ARGS):;@:)
+endif
+
 # parse arguments for changelog-finalize target
 ifeq (changelog-finalize,$(firstword $(MAKECMDGOALS)))
   CHANGELOG_FINALIZE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -49,7 +55,10 @@ endif
 
 default: help
 
-dummy-puch-bitbucket:
+dummy-push-origin:
+	# ...
+
+dummy-push-bitbucket:
 	# ...
 
 dummy-generate-test:
@@ -126,5 +135,9 @@ gotests-generate: dummy-generate-test
 	@$(GOTESTS) -all -template testify $(SRC_DIR)/$(GOTESTS_GENERATE_ARGS) >> $(SRC_DIR)/$(basename $(GOTESTS_GENERATE_ARGS))$(TEST_SUFFIX)
 
 .PHONY: push-bitbucket #            -- Pushes to bitbucket remote
-push-bitbucket: dummy-puch-bitbucket
+push-bitbucket: dummy-push-bitbucket
 	@$(GIT) push -u bitbucket $(PUSH_BITBUCKET_ARGS)
+
+.PHONY: push-origin #               -- Pushes to bitbucket remote
+push-origin: dummy-push-origin
+	@$(GIT) push -u origin $(PUSH_ORIGIN_ARGS)
