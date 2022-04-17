@@ -11,5 +11,6 @@ type Scheduler interface {
 	GetScheduled(ctx context.Context) ([]*task.Task, error)
 	RemoveTask(taskID int64)
 	GetTasks(ctx context.Context) ([]*task.Task, error)
+	Maintain(serviceName string)
 	Start()
 }

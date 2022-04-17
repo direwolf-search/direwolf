@@ -11,10 +11,10 @@ import (
 type CrawlAllUseCase struct {
 	Context    context.Context
 	Crawler    crawler.Crawler
-	Repository repository.Repository
+	Repository repository.CrawlerRepository
 }
 
-func NewCrawlAllUseCase(ctx context.Context, c crawler.Crawler, r repository.Repository) *CrawlAllUseCase {
+func NewCrawlAllUseCase(ctx context.Context, c crawler.Crawler, r repository.CrawlerRepository) *CrawlAllUseCase {
 	return &CrawlAllUseCase{
 		Context:    ctx,
 		Crawler:    c,

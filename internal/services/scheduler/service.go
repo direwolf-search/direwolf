@@ -31,6 +31,11 @@ func NewService(of string, l domain.Logger, r repository.SchedulerRepository) sc
 	}
 }
 
+// Maintain sets name of service maintained by s
+func (s *service) Maintain(serviceName string) {
+	s.of = serviceName
+}
+
 // GetTasks gets a list of tasks to execute from the repository
 func (s *service) GetTasks(ctx context.Context) ([]*task.Task, error) {
 	return s.repository.ByType(ctx, s.of)

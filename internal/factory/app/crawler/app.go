@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"context"
+	"direwolf/internal/domain"
 	crawlall "direwolf/internal/domain/usecases/crawl_all"
 	"log"
 
@@ -17,17 +18,24 @@ type appCrawler struct {
 	Crawler    crawler.Crawler
 	Repository repository.Repository
 	Scheduler  scheduler.Scheduler
+	Logger     domain.Logger
 }
 
-func NewAppCrawler(crawler crawler.Crawler, taskPool scheduler.Scheduler, repo repository.Repository) app.App {
+func NewAppCrawler(crawler crawler.Crawler, logger domain.Logger, taskPool scheduler.Scheduler, repo repository.Repository) app.App {
 	return &appCrawler{
 		Crawler:    crawler,
 		Repository: repo,
 		Scheduler:  taskPool,
+		Logger:     logger,
 	}
 }
 
 func (ac *appCrawler) Do(ctx context.Context) {
+	ac.Scheduler.Maintain("crawler_service")
+	tasks, err := ac.Scheduler.GetTasks(ctx)
+	if err != nil {
+		ac.Logger.Error(err, "cannot get tasks for crawler_service: ")
+	}
 	useCase := crawlall.NewCrawlAllUseCase(ctx, ac.Crawler, ac.Repository)
 	go func() {
 		ac.crawlerUseCase.Crawler.GetTask()
@@ -45,7 +53,7 @@ func (ac *appCrawler) Do(ctx context.Context) {
 		}
 
 		<-ctx.Done()
-		log.Println("Crawler finished")
+		log.Println("Crawler stopped")
 
 	}()
 }

@@ -36,24 +36,26 @@ type CollyConfig interface {
 	TorGate() string
 }
 
-type EngineRepository interface {
+type engineRepo interface {
 	Insert(ctx context.Context, entity map[string]interface{}) error
 	Updated(ctx context.Context, url, md5hash string) (bool, error)
 	Exists(ctx context.Context, url string) (bool, error)
 	Update(ctx context.Context, entity map[string]interface{}) error
 }
 
+type engineLogger interface {
+	Printf(format string, ii ...interface{})
+	Error(err error, msg string, keysAndValues ...interface{})
+	Fatal(err error, msg string, keysAndValues ...interface{})
+}
+
 // CollyEngine is an implementation of scraping engine for crawler service.
 // Built with gocolly/colly/v2 under the hood
 type CollyEngine struct {
-	queue  *Queue
-	repo   EngineRepository
-	engine *colly.Collector
-	logger interface {
-		Printf(format string, ii ...interface{})
-		Error(err error, msg string, keysAndValues ...interface{})
-		Fatal(err error, msg string, keysAndValues ...interface{})
-	}
+	queue                     *Queue
+	repo                      engineRepo
+	engine                    *colly.Collector
+	logger                    engineLogger
 	htmlParser                parser.HTMLParser
 	workersNum                int
 	crawlerRules              map[string]*colly.LimitRule
@@ -67,14 +69,10 @@ type CollyEngine struct {
 // NewCollyEngine returns new instance of CollyEngine
 func NewCollyEngine(
 	isTor bool,
-	repo EngineRepository,
+	repo engineRepo,
 	parser parser.HTMLParser,
 	config CollyConfig,
-	logger interface {
-		Printf(format string, ii ...interface{})
-		Error(err error, msg string, keysAndValues ...interface{})
-		Fatal(err error, msg string, keysAndValues ...interface{})
-	},
+	logger engineLogger,
 ) *CollyEngine {
 	var (
 		torLimitRule = &colly.LimitRule{
