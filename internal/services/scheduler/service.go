@@ -31,12 +31,12 @@ func NewService(of string, l domain.Logger, r repository.SchedulerRepository) sc
 	}
 }
 
-// GetTasks gets from repository list of task to execute
+// GetTasks gets a list of tasks to execute from the repository
 func (s *service) GetTasks(ctx context.Context) ([]*task.Task, error) {
 	return s.repository.ByType(ctx, s.of)
 }
 
-// ScheduleTask sets up task for executing with its schedule
+// ScheduleTask sets a task to run with its schedule
 func (s *service) ScheduleTask(task *task.Task, jobFunc func()) {
 	var (
 		wrapper cron.JobWrapper

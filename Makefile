@@ -31,20 +31,20 @@ CONVERTER := openapi2proto
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
-  changelog_init_args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(changelog_init_args):;@:)
+  CHANGELOG_INIT_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(CHANGELOG_INIT_ARGS):;@:)
 endif
 
 # parse arguments for changelog-finalize target
 ifeq (changelog-finalize,$(firstword $(MAKECMDGOALS)))
-  changelog_finalize_args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(changelog_finalize_args):;@:)
+  CHANGELOG_FINALIZE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(CHANGELOG_FINALIZE_ARGS):;@:)
 endif
 
 # parse arguments for generate-test target
-ifeq (generate-test,$(firstword $(MAKECMDGOALS)))
-  generate_test_args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(generate_test_args):;@:)
+ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
+  GOTESTS_GENERATE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(GOTESTS_GENERATE_ARGS):;@:)
 endif
 
 SERVICERS_API_DIR := $(shell find $(CONCRETE_SERVICES_SRC_DIR) -name "*.proto")
@@ -129,7 +129,7 @@ changelog-install:
 
 .PHONY: changelog-init #            -- Initialize changelog file for project. Syntax: make changelog-init [version]
 changelog-init: dummy-changelog-init
-	@changelog init --author "Alexey 'hIMEI' Matveev" --email "himei@tuta.io" --since $(changelog_init_args)
+	@changelog init --author "Alexey 'hIMEI' Matveev" --email "himei@tuta.io" --since $(CHANGELOG_INIT_ARGS)
 
 .PHONY: changelog-prepare #         -- Prepares changelog for release.
 changelog-prepare:
@@ -137,7 +137,7 @@ changelog-prepare:
 
 .PHONY: changelog-finalize #        -- Finalizes changelog with given version. Syntax: make changelog-finalize [version]
 changelog-finalize: dummy-changelog-finalize
-	@$(CHANGELOG) finalize --version=$(changelog_finalize_args)
+	@$(CHANGELOG) finalize --version=$(CHANGELOG_FINALIZE_ARGS)
 
 .PHONY: changelog-out #             -- Creates changelog file in md format
 changelog-out:
@@ -151,8 +151,8 @@ gotests-check:
 		exit 1; \
 	fi
 
-.PHONY: generate-test #             -- Generates tests for given file
-generate-test: dummy-generate-test
-	@$(GOTESTS) -all $(generate_test_args) >> $(basename $(generate_test_args))$(TEST_SUFFIX)
+.PHONY: gotests-generate #          -- Generates tests for given file
+gotests-generate: dummy-generate-test
+	@$(GOTESTS) -all -template testify $(SRC_DIR)/$(GOTESTS_GENERATE_ARGS) >> $(SRC_DIR)/$(basename $(GOTESTS_GENERATE_ARGS))$(TEST_SUFFIX)
 
 
