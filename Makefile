@@ -17,11 +17,18 @@ TEST_SUFFIX := _test.go
 # binaries
 CHANGELOG := changelog
 GOTESTS := gotests
+GIT := git
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
   CHANGELOG_INIT_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(CHANGELOG_INIT_ARGS):;@:)
+endif
+
+# parse arguments for push-bitbucket target
+ifeq (push-bitbucket,$(firstword $(MAKECMDGOALS)))
+  PUSH_BITBUCKET_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(PUSH_BITBUCKET_ARGS):;@:)
 endif
 
 # parse arguments for changelog-finalize target
@@ -41,6 +48,9 @@ endif
 
 
 default: help
+
+dummy-puch-bitbucket:
+	# ...
 
 dummy-generate-test:
 	# ...
@@ -115,4 +125,6 @@ gotests-check:
 gotests-generate: dummy-generate-test
 	@$(GOTESTS) -all -template testify $(SRC_DIR)/$(GOTESTS_GENERATE_ARGS) >> $(SRC_DIR)/$(basename $(GOTESTS_GENERATE_ARGS))$(TEST_SUFFIX)
 
-
+.PHONY: push-bitbucket #            -- Pushes to bitbucket remote
+push-bitbucket: dummy-puch-bitbucket
+	@$(GIT) push -u bitbucket $(PUSH_BITBUCKET_ARGS)
