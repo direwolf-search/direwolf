@@ -21,9 +21,7 @@ require (
 	github.com/antchfx/xmlquery v1.2.4 // indirect
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
@@ -41,15 +39,11 @@ require (
 )
 
 require (
-	github.com/golang/protobuf v1.5.2
-	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
+	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/stretchr/testify v1.7.1 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
-	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e
-	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

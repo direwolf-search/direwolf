@@ -6,28 +6,17 @@ SHELL = /bin/bash
 
 # dirs
 SRC_DIR := internal
-DOMAIN_SERVICES_SRC_DIR := $(SRC_DIR)/domain/service
 CONCRETE_SERVICES_SRC_DIR := $(SRC_DIR)/services
-API_DIR = $(SRC_DIR)/api
-PROTO_PACKAGES_DIR := protos
-GENERATED_FROM_OPENAPI_DIR := build/generated
-OPENAPI_FILES_DIR := docs/openapi2protofiles
-DOCS_DIR := docs
 
 # version
 VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null)
 
 # replacements
-YAML_SUFFIX := .yaml
-PROTO_SUFFIX := *.proto
 TEST_SUFFIX := _test.go
-GRPC_SUFFIX := grpc
 
 # binaries
-PROTOC := protoc
 CHANGELOG := changelog
 GOTESTS := gotests
-CONVERTER := openapi2proto
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
@@ -41,15 +30,11 @@ ifeq (changelog-finalize,$(firstword $(MAKECMDGOALS)))
   $(eval $(CHANGELOG_FINALIZE_ARGS):;@:)
 endif
 
-# parse arguments for generate-test target
+# parse arguments for gotests-generate target
 ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
   GOTESTS_GENERATE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(GOTESTS_GENERATE_ARGS):;@:)
 endif
-
-SERVICERS_API_DIR := $(shell find $(CONCRETE_SERVICES_SRC_DIR) -name "*.proto")
-srcs := $(foreach d,$(SERVICERS_API_DIR),$(wildcard $(d)/*.proto))
-objs := $(srcs:.cpp=.o)
 
 # Targets
 ##########
@@ -83,33 +68,9 @@ help:
 version:
 	@echo $(VERSION)
 
-.PHONY: generate #                  -- Generates gRPC API from .proto file
-generate: $(SERVICERS_API_DIR)
-	for file in $^ ; do \
-    	$(PROTOC) -I$(PROTO_PACKAGES_DIR) \
-        	--proto_path=$$(dirname $${file%.*})/ \
-        	--go_out=$(API_DIR)/$$(basename $${file%.*}) \
-			--go_opt=paths=source_relative \
-        	--go-grpc_out=$(API_DIR)/$$(basename $${file%.*}) \
-        	--go-grpc_opt=paths=source_relative \
-        	--grpc-gateway_out $(API_DIR)/$$(basename $${file%.*}) \
-        	--grpc-gateway_opt logtostderr=true \
-        	--grpc-gateway_opt paths=source_relative \
-        	--swagger_out=$(DOCS_DIR) \
-        	$$file; \
-    done
-
 .PHONY: clean #                     -- removes protoc code generation artifacts
 clean:
 	@rm -R gen
-
-.PHONY: convert #                   -- Converts OpenApi documentation in .yaml to .proto files
-convert: $(OPENAPI_FILES_DIR)/*
-	@echo 'File $^ will be converted to .proto file format'
-	@$(CONVERTER) \
-	-spec $^ \
-	-out $(subst $(YAML_SUFFIX),$(PROTO_SUFFIX),$(subst $(OPENAPI_FILES_DIR),$(GENERATED_FROM_OPENAPI_DIR), $^)) \
-	-annotate \
 
 .PHONY: changelog-check #           -- Checks if changelog installed
 changelog-check:
@@ -125,7 +86,6 @@ changelog-install:
 	@go install github.com/mh-cbon/changelog
 	@$(CHANGELOG)
 	@echo "mh-cbon/changelog installed if you see its usage message"
-
 
 .PHONY: changelog-init #            -- Initialize changelog file for project. Syntax: make changelog-init [version]
 changelog-init: dummy-changelog-init
