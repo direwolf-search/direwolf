@@ -1,8 +1,9 @@
 # direwolf
 
-**direwolf** - dark-web search engine. Project's development is in progress now.
+**direwolf** - a dark web search engine written in pure Go using Domen Driven Design approaches. 
+The project is currently under development.
 
-Copyright 2020-2021 hIMEI
+Copyright 2020-2022 hIMEI
 
 ## TOC
 - [About](#about)
@@ -21,7 +22,7 @@ DireWolf, pure Go written dark-web search engine.
 
 ## Status
 
-Work in progress
+Work in progress. 
 
 ## License
 
@@ -31,7 +32,11 @@ MIT License
 
 ## Version
 
-v0.1.0
+v0.0.0
+
+#### In next:
+
+Crawler MVP model
 
 ## Install
 
