@@ -12,6 +12,7 @@ API_DIR = $(SRC_DIR)/api
 PROTO_PACKAGES_DIR := protos
 GENERATED_FROM_OPENAPI_DIR := build/generated
 OPENAPI_FILES_DIR := docs/openapi2protofiles
+DOCS_DIR := docs
 
 # version
 VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null)
@@ -87,13 +88,14 @@ generate: $(SERVICERS_API_DIR)
 	for file in $^ ; do \
     	$(PROTOC) -I$(PROTO_PACKAGES_DIR) \
         	--proto_path=$$(dirname $${file%.*})/ \
-        	--go_out=$(api_dir)/$$(basename $${file%.*}) \
+        	--go_out=$(API_DIR)/$$(basename $${file%.*}) \
 			--go_opt=paths=source_relative \
-        	--go-grpc_out=$(api_dir)/$$(basename $${file%.*}) \
+        	--go-grpc_out=$(API_DIR)/$$(basename $${file%.*}) \
         	--go-grpc_opt=paths=source_relative \
-        	--grpc-gateway_out $(api_dir)/$$(basename $${file%.*}) \
+        	--grpc-gateway_out $(API_DIR)/$$(basename $${file%.*}) \
         	--grpc-gateway_opt logtostderr=true \
         	--grpc-gateway_opt paths=source_relative \
+        	--swagger_out=$(DOCS_DIR) \
         	$$file; \
     done
 
