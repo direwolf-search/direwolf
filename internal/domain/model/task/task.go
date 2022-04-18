@@ -31,6 +31,29 @@ func NewTask(taskType *typeOfTask, schedule string, skipNext bool) *Task {
 	}
 }
 
+func (ct *Task) ToMap() map[string]interface{} {
+	var (
+		m = make(map[string]interface{})
+		t = make(map[string]interface{})
+	)
+
+	if ct.id != 0 {
+		m["id"] = ct.id
+	}
+	if ct.taskType != nil {
+		t["of"] = ct.taskType.of
+		m["rule"] = ct.taskType.rule
+	}
+	if ct.schedule != "" {
+		m["schedule"] = ct.schedule
+	}
+	if !ct.skipNext {
+		m["skip_next"] = ct.skipNext
+	}
+
+	return m
+}
+
 // Of returns `of` field of the taskType field
 func (ct *Task) Of() string {
 	return ct.taskType.of

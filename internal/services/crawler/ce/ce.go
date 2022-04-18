@@ -15,11 +15,11 @@ import (
 	"github.com/gocolly/colly/v2/debug"
 	"github.com/gocolly/colly/v2/proxy"
 
-	parser "direwolf/internal/pkg/crawler/html_parser"
-	rd "direwolf/internal/pkg/crawler/random_delay"
-	rh "direwolf/internal/pkg/crawler/random_headers"
 	"direwolf/internal/pkg/helpers"
 	"direwolf/internal/pkg/links"
+	parser "direwolf/internal/services/crawler/html_parser"
+	rd "direwolf/internal/services/crawler/random_delay"
+	rh "direwolf/internal/services/crawler/random_headers"
 )
 
 var (
