@@ -1,10 +1,10 @@
-package repository
+package engine
 
 import (
 	"context"
 )
 
-type EngineRepository interface {
+type Repository interface {
 	Insert(ctx context.Context, entity map[string]interface{}) error
 	Updated(ctx context.Context, url, md5hash string) (bool, error)
 	Exists(ctx context.Context, url string) (bool, error)

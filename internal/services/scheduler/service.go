@@ -3,10 +3,10 @@ package scheduler
 
 import (
 	"context"
+	scheduler2 "direwolf/internal/domain/repository/scheduler"
 
 	"direwolf/internal/domain"
 	"direwolf/internal/domain/model/task"
-	"direwolf/internal/domain/repository"
 	"direwolf/internal/domain/service/scheduler"
 )
 
@@ -14,11 +14,11 @@ type service struct {
 	scheduler  scheduler.Engine
 	of         string // other service maintained by the scheduler
 	logger     domain.Logger
-	repository repository.SchedulerRepository
+	repository scheduler2.Repository
 }
 
 // NewService creates new scheduler service
-func NewService(se scheduler.Engine, of string, l domain.Logger, r repository.SchedulerRepository) scheduler.Scheduler {
+func NewService(se scheduler.Engine, of string, l domain.Logger, r scheduler2.Repository) scheduler.Scheduler {
 	return &service{
 		scheduler:  se,
 		of:         of,
