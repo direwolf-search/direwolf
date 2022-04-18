@@ -1,6 +1,8 @@
 # Makefile of DireWolf project
 SHELL = /bin/bash
 
+
+
 # prerequisites
 ###############
 
@@ -19,6 +21,8 @@ TEST_SUFFIX := _test.go
 CHANGELOG := changelog
 GOTESTS := gotests
 GIT := git
+
+
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
@@ -50,9 +54,10 @@ ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
   $(eval $(GOTESTS_GENERATE_ARGS):;@:)
 endif
 
+
+
 # Targets
 ##########
-
 
 default: help
 
