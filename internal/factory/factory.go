@@ -4,12 +4,12 @@ import (
 	"reflect"
 	"strings"
 
-	"direwolf/internal/factory/app"
+	"direwolf/internal/domain"
 )
 
 // AppFactory ...
 type AppFactory interface {
-	BuildApp(components []interface{}) app.App
+	BuildApp(components []interface{}) domain.App
 }
 
 func GetName(component interface{}) string {

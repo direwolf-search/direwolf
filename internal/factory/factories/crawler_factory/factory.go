@@ -3,14 +3,13 @@ package crawler_factory
 import (
 	"os"
 
+	app_crawler "direwolf/internal/app/crawler"
+	"direwolf/internal/domain"
 	"direwolf/internal/domain/repository"
 	service "direwolf/internal/domain/service/crawler"
 	"direwolf/internal/domain/usecases/crawl_all"
 	"direwolf/internal/factory"
-	"direwolf/internal/factory/app"
-	app_crawler "direwolf/internal/factory/app/crawler"
 	concrete "direwolf/internal/services/crawler"
-	//"direwolf/internal/factory"
 )
 
 type crawlerFactory struct{}
@@ -19,7 +18,7 @@ func NewCrawlerFactory() factory.AppFactory {
 	return &crawlerFactory{}
 }
 
-func (ef *crawlerFactory) BuildApp(components []interface{}) app.App {
+func (cf *crawlerFactory) BuildApp(components []interface{}) domain.App {
 	var (
 		defaultEngineName     = os.Getenv("DW_DEFAULT_TOR_CRAWLER_ENGINE") // TODO:
 		defaultRepositoryName = os.Getenv("DW_DEFAULT_TOR_CRAWLER_REPOSITORY")

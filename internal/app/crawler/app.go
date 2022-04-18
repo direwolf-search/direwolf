@@ -2,16 +2,15 @@ package crawler
 
 import (
 	"context"
-	"direwolf/internal/domain"
-	crawlall "direwolf/internal/domain/usecases/crawl_all"
 	"log"
 
 	"github.com/robfig/cron/v3"
 
+	"direwolf/internal/domain"
 	"direwolf/internal/domain/repository"
 	"direwolf/internal/domain/service/crawler"
 	"direwolf/internal/domain/service/scheduler"
-	"direwolf/internal/factory/app"
+	crawlall "direwolf/internal/domain/usecases/crawl_all"
 )
 
 type appCrawler struct {
@@ -21,7 +20,7 @@ type appCrawler struct {
 	Logger     domain.Logger
 }
 
-func NewAppCrawler(crawler crawler.Crawler, logger domain.Logger, taskPool scheduler.Scheduler, repo repository.Repository) app.App {
+func NewAppCrawler(crawler crawler.Crawler, logger domain.Logger, taskPool scheduler.Scheduler, repo repository.Repository) domain.App {
 	return &appCrawler{
 		Crawler:    crawler,
 		Repository: repo,
