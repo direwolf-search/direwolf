@@ -1,6 +1,8 @@
 # Makefile of DireWolf project
 SHELL = /bin/bash
 
+
+
 # prerequisites
 ###############
 
@@ -9,7 +11,8 @@ SRC_DIR := internal
 CONCRETE_SERVICES_SRC_DIR := $(SRC_DIR)/services
 
 # version
-VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null)
+REV_LIST := $(shell git rev-list --tags --max-count=1)
+VERSION ?= $(shell git describe --tags $(REV_LIST)) # git describe --tags $(git rev-list --tags --max-count=1)
 
 # replacements
 TEST_SUFFIX := _test.go
@@ -18,6 +21,8 @@ TEST_SUFFIX := _test.go
 CHANGELOG := changelog
 GOTESTS := gotests
 GIT := git
+
+
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
@@ -49,9 +54,10 @@ ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
   $(eval $(GOTESTS_GENERATE_ARGS):;@:)
 endif
 
+
+
 # Targets
 ##########
-
 
 default: help
 

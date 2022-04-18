@@ -58,7 +58,7 @@ func (p *parser) trimTags(body string) string {
 	return strip.StripTags(body)
 }
 
-func (p *parser) ParseHTML(url string, body []byte) (map[string]interface{}, error) {
+func (p *parser) ParseHTML(body []byte) (map[string]interface{}, error) {
 	stringReader := strings.NewReader(string(body))
 	doc, err := htmlquery.Parse(stringReader)
 	if err != nil {
@@ -69,7 +69,6 @@ func (p *parser) ParseHTML(url string, body []byte) (map[string]interface{}, err
 		"body":    string(body),
 		"text":    p.trimTags(string(body)),
 		"status":  true,
-		"url":     url,
 		"title":   p.getTitle(doc),
 		"h1":      p.getH1(doc),
 		"md5hash": helpers.GetMd5(string(body)),
@@ -77,7 +76,7 @@ func (p *parser) ParseHTML(url string, body []byte) (map[string]interface{}, err
 }
 
 type HTMLParser interface {
-	ParseHTML(url string, body []byte) (map[string]interface{}, error)
+	ParseHTML(body []byte) (map[string]interface{}, error)
 }
 
 func NewHTMLParser() HTMLParser {

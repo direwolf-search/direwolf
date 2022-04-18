@@ -20,7 +20,7 @@ type ScedulerEngine struct {
 	taskList  map[int]int64
 }
 
-func NewCronEngine(l schedulerLogger) *ScedulerEngine {
+func NewSchedulerEngine(l schedulerLogger) *ScedulerEngine {
 	return &ScedulerEngine{
 		scheduler: cron.New(cron.WithLogger(l)),
 		logger:    l,

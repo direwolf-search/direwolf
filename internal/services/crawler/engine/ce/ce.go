@@ -47,6 +47,7 @@ type engineLogger interface {
 	Printf(format string, ii ...interface{})
 	Error(err error, msg string, keysAndValues ...interface{})
 	Fatal(err error, msg string, keysAndValues ...interface{})
+	Debug(msg string, keysAndValues ...interface{})
 }
 
 // CollyEngine is an implementation of scraping engine for crawler service.
@@ -137,7 +138,7 @@ func (cen *CollyEngine) SetHTMLParser(p interface{}) {
 	}
 }
 
-func (cen *CollyEngine) Visit(ctx context.Context, url string) {
+func (cen *CollyEngine) Visit(ctx context.Context, urls ...string) {
 	var (
 		addRequestToQueue = func(ctx context.Context, someUrl string, arg ...map[string]interface{}) error {
 			u, err := neturl.Parse(someUrl)
@@ -178,13 +179,19 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	// get full HTML page and parse it to host.Host{}
 	cen.engine.OnHTML("html", func(e *colly.HTMLElement) {
 		cen.Lock()
-		h, err := cen.htmlParser.ParseHTML(url, e.Response.Body)
-		cen.Unlock()
 
+		h, err := cen.htmlParser.ParseHTML(e.Response.Body)
 		if err != nil {
-			cen.logger.Error(err, "cannot parse HTML ", url)
+			cen.logger.Error(err, "cannot parse HTML ", e.Request.URL)
 		}
 
+		cen.Unlock()
+
+		h["url"] = e.Request.AbsoluteURL(e.Request.URL.String())
+		cen.logger.Debug(
+			"CollyEngine: e.Request.AbsoluteURL(e.Request.URL.String()) = ",
+			e.Request.AbsoluteURL(e.Request.URL.String()),
+		)
 		//err = cen.repo.Insert(ctx, h)
 		err = cen.SaveHost(ctx, h)
 		if err != nil {
@@ -197,7 +204,7 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	cen.engine.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		href := e.Attr("href")
 		l := map[string]interface{}{
-			"from":    url,
+			"from":    e.Request.AbsoluteURL(e.Request.URL.String()),
 			"body":    href,
 			"snippet": e.Text,
 			"is_v3":   true,
@@ -207,12 +214,8 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 		if err != nil {
 			cen.logger.Error(err, "cannot save link ", l)
 		}
-		ok, err := cen.engine.HasVisited(e.Request.AbsoluteURL(href))
-		if err != nil {
-			cen.logger.Error(err, "cannot check visited url ", e.Request.AbsoluteURL(href))
-		}
 
-		if !ok {
+		if !cen.hasVisited(e.Request.AbsoluteURL(href)) {
 			err = addRequestToQueue(ctx, e.Request.AbsoluteURL(href), l)
 			if err != nil {
 				cen.logger.Error(err, "cannot add url to queue ", e.Request.AbsoluteURL(href))
@@ -220,19 +223,16 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 		}
 	})
 
-	ok, err := cen.engine.HasVisited(url)
-	if err != nil {
-		cen.logger.Error(err, "cannot mark visited url ", url)
-	}
-
-	if !ok {
-		err = addRequestToQueue(ctx, url)
-		if err != nil {
-			cen.logger.Error(err, "cannot add url to queue ", url)
+	for _, someUrl := range urls {
+		if !cen.hasVisited(someUrl) {
+			err := addRequestToQueue(ctx, someUrl)
+			if err != nil {
+				cen.logger.Error(err, "cannot add url to queue ", someUrl)
+			}
 		}
 	}
 
-	err = cen.queue.Run(cen.engine)
+	err := cen.queue.Run(cen.engine)
 	if err != nil {
 		cen.logger.Error(err, "cannot run queue ")
 		return
@@ -241,10 +241,18 @@ func (cen *CollyEngine) Visit(ctx context.Context, url string) {
 	cen.engine.Wait()
 }
 
-func (cen *CollyEngine) VisitAll(ctx context.Context, urls ...string) { // TODO: without walk through slice
-	for _, u := range urls {
-		cen.Visit(ctx, u)
+// hasVisited checks if url has been visited in current task.
+//
+// since colly.CollectorHasVisited always returns nil as the second value,
+// we will not propagate this error.
+// https://github.com/gocolly/colly/blob/bbf3f10c37205136e9d4f46fe8118205cc505a67/colly.go#L450
+func (cen *CollyEngine) hasVisited(url string) bool {
+	ok, err := cen.engine.HasVisited(url)
+	if err != nil {
+		cen.logger.Error(err, "cannot check if url has been visited ", url)
 	}
+
+	return ok
 }
 
 func (cen *CollyEngine) Init() { // TODO: ???????
@@ -322,5 +330,3 @@ func (cen *CollyEngine) GetName() string {
 
 	return sp[len(sp)-1]
 }
-
-// facebookwkhpilnemxj7asaniu7vnjjbiltxjqhye3mhbshg7kx5tfyd.onion
