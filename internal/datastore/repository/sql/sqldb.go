@@ -1,7 +1,9 @@
 package sql
 
 import (
+	"context"
 	"database/sql"
+	"direwolf/internal/domain"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
@@ -11,14 +13,21 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 	//"github.com/uptrace/bun/dialect/mysqldialect"
 	"github.com/uptrace/bun/schema"
+
+	"direwolf/internal/datastore/models"
+	"direwolf/internal/domain/model/host"
+	"direwolf/internal/domain/model/link"
 )
 
 var (
 	noRowsErrMessage                 = "sql: no rows in result set"
+	errorOfCheckIfHostExists         = "error of check if host exists"
+	errorOfCheckIfLinkExists         = "error of check if link exists"
 	establishingConnectionErrMessage = "error establishing connection to repo:"
 	hostHandlingErrMessage           = "error of host selecting or updating:"
 	linkHandlingErrMessage           = "error of link selecting or updating:"
 	notImplementedErrMessage         = "not implemented yet"
+	errLinkInsert                    = "error of link inserting"
 )
 
 // errorBuilder builds error from error message and additional fields.
@@ -48,7 +57,8 @@ func connToDB(dsn string) *sql.DB {
 }
 
 type SQLRepository struct {
-	db *bun.DB
+	logger domain.Logger
+	db     *bun.DB
 }
 
 // sqlRepository ...
@@ -59,12 +69,13 @@ type sqlRepository struct {
 
 // NewSqlRepository ...
 // TODO:NewSqlRepository(dialect schema.Dialect, dsn string)
-func NewSqlRepository(dialect schema.Dialect) *sqlRepository {
+func NewSqlRepository(dialect schema.Dialect, logger domain.Logger) (*sqlRepository, error) {
 	dsn := os.Getenv("DW_DEFAULT_TOR_CRAWLER_DSN")
 	db := bun.NewDB(connToDB(dsn), dialect)
 
 	if err := db.Ping(); err != nil {
-		log.Fatalln(errorBuilder(establishingConnectionErrMessage, err.Error()))
+		logger.Fatal(errorBuilder(establishingConnectionErrMessage, err.Error()), "") // TODO: msg arg
+		return nil, err
 	}
 
 	// Print all queries to stdout.
@@ -72,9 +83,109 @@ func NewSqlRepository(dialect schema.Dialect) *sqlRepository {
 
 	return &sqlRepository{
 		Direct: db,
-		Repo:   &SQLRepository{db: db},
-	}
+		Repo: &SQLRepository{
+			db:     db,
+			logger: logger,
+		},
+	}, nil
 }
+
+func (sr *SQLRepository) insertHost(ctx context.Context, h *host.Host) error {
+	var (
+		host = models.NewHostFromModel(h)
+	)
+	// check if host already exists in DB
+	exist, err := sr.hostExists(ctx, h.URL)
+	if err != nil {
+		err := errorBuilder(errorOfCheckIfHostExists, err.Error(), host.URL)
+		sr.logger.Error(err, "")
+	}
+	// if host is not exists, insert it
+	if !exist {
+		if _, err := sr.db.NewInsert().Model(host).Exec(ctx); err != nil {
+			err := errorBuilder(hostHandlingErrMessage, err.Error(), host.URL)
+			sr.logger.Error(err, "")
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (sr *SQLRepository) linkExists(ctx context.Context, linkBody, linkFrom string) (bool, error) {
+	return sr.db.NewSelect().
+		Model((*models.Link)(nil)).
+		Where("body = ?", linkBody).
+		Where("from = ?", linkFrom).
+		Exists(ctx)
+}
+
+func (sr *SQLRepository) hostExists(ctx context.Context, url string) (bool, error) {
+	return sr.db.NewSelect().
+		Model((*models.Link)(nil)).
+		Where("url = ?", url).
+		Exists(ctx)
+}
+
+func (sr *SQLRepository) insertLink(ctx context.Context, l *link.Link) error {
+	var (
+		link = models.NewLinkFromModel(l)
+	)
+	// check if link already exists in DB
+	exist, err := sr.linkExists(ctx, l.Body, l.From)
+	if err != nil {
+		err := errorBuilder(errorOfCheckIfLinkExists, err.Error())
+		sr.logger.Error(err, "", map[string]interface{}{"link.Body": l.Body, "link.From": l.From})
+		return err
+	}
+
+	if !exist {
+		if _, err := sr.db.NewInsert().Model(link).Exec(ctx); err != nil {
+			err := errorBuilder(errLinkInsert, err.Error())
+			sr.logger.Error(err, "", map[string]interface{}{"link.Body": l.Body, "link.From": l.From})
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (sr *SQLRepository) updateHostByURL(ctx context.Context, url string, fields map[string]interface{}) error {
+	res, err := sr.db.NewUpdate().
+		Model(&fields).
+		TableExpr("hosts").
+		Where("? = ?", bun.Ident("url"), url).
+		Exec(ctx)
+
+	if err != nil {
+		err := errorBuilder(hostHandlingErrMessage, err.Error())
+		sr.logger.Error(err, url)
+		return err
+	}
+
+	num, _ := res.RowsAffected()
+	if num != 1 {
+		return errorBuilder(hostHandlingErrMessage, url)
+	}
+
+	return nil
+}
+
+func (sr *SQLRepository) getAllHosts(ctx context.Context) ([]*host.Host, error) {
+	var hosts = make([]*host.Host, 0)
+	if err := sr.db.NewSelect().
+		Model((*models.Host)(nil)).
+		ColumnExpr("*").
+		OrderExpr("id ASC").Scan(ctx, &hosts); err != nil {
+		err = errorBuilder(hostHandlingErrMessage, err.Error())
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	return hosts, nil
+}
+
+//// UpdateHostByURL ...
 
 //func (sr *SQLRepository) Insert(ctx context.Context, entity interface{}) error {
 //	switch v := entity.(type) {
@@ -88,56 +199,7 @@ func NewSqlRepository(dialect schema.Dialect) *sqlRepository {
 //}
 //
 //// CreateHost ...
-//func (sr *SQLRepository) CreateHost(ctx context.Context, h *host.Host) error {
-//	var (
-//		hostModel = sr.ConvertHostToModel(h)
-//		id        = int64(-1)
-//	)
-//	// check if host already exists in DB
-//	if err := sr.db.NewSelect().Model(hostModel).Column("id").
-//		Where("? = ?", bun.Ident("url"), hostModel.URL).Scan(ctx); err != nil {
-//		if !strings.Contains(err.Error(), noRowsErrMessage) {
-//			wrappedErr := errorBuilder(hostHandlingErrMessage, err.Error(), hostModel.URL)
-//			log.Println(wrappedErr.Error())
-//			return wrappedErr
-//		} else {
-//			id = 0
-//		}
-//	}
-//	// if host is not exists, insert it
-//	if id == 0 {
-//		if res, err := sr.db.NewInsert().Model(hostModel).Exec(ctx); err != nil {
-//			wrappedErr := errorBuilder(hostHandlingErrMessage, err.Error(), hostModel.URL)
-//			log.Println(wrappedErr.Error())
-//			return wrappedErr
-//		} else {
-//			id, _ = res.LastInsertId()
-//		}
-//	} else {
-//		id = hostModel.ID
-//	}
-//
-//	return nil
-//}
-//
-//// UpdateHostByURL ...
-//func (sr *SQLRepository) UpdateHostByURL(ctx context.Context, url string, fields map[string]interface{}) error {
-//	res, err := sr.db.NewUpdate().Model(&fields).TableExpr("hosts").Where("? = ?", bun.Ident("url"), url).
-//		Exec(ctx)
-//
-//	if err != nil {
-//		wrappedErr := errorBuilder(hostHandlingErrMessage, err.Error(), url)
-//		log.Println(wrappedErr.Error())
-//		return wrappedErr
-//	}
-//
-//	num, _ := res.RowsAffected()
-//	if num != 1 {
-//		return errorBuilder(hostHandlingErrMessage, url)
-//	}
-//
-//	return nil
-//}
+
 //
 //// UpdateHostByID ...
 //func (sr *SQLRepository) UpdateHostByID(ctx context.Context, id int64, fields map[string]interface{}) error {
@@ -200,17 +262,7 @@ func NewSqlRepository(dialect schema.Dialect) *sqlRepository {
 //}
 //
 //// GetAllHosts ...
-//func (sr *SQLRepository) GetAllHosts(ctx context.Context) ([]*host.Host, error) {
-//	var hosts = make([]*host.Host, 0)
-//	if err := sr.db.NewSelect().Model((*models.Host)(nil)).
-//		ColumnExpr("*").OrderExpr("id ASC").Scan(ctx, &hosts); err != nil {
-//		wrappedErr := errorBuilder(hostHandlingErrMessage, err.Error())
-//		log.Println(wrappedErr.Error())
-//		return nil, wrappedErr
-//	}
-//
-//	return hosts, nil
-//}
+
 //
 //// DeleteHost ...
 //func (sr *SQLRepository) DeleteHost(ctx context.Context, id int64) error {
@@ -221,36 +273,7 @@ func NewSqlRepository(dialect schema.Dialect) *sqlRepository {
 //}
 //
 //// CreateLink ...
-//func (sr *SQLRepository) CreateLink(ctx context.Context, l *link.Link) error {
-//	var (
-//		linkModel = sr.ConvertLinkToModel(l)
-//		id        = int64(-1)
-//	)
-//
-//	// check if link already exists in DB
-//	if err := sr.db.NewSelect().Model(linkModel).Column("id").
-//		Where("? = ?", bun.Ident("body"), linkModel.Body).
-//		Where("? = ?", bun.Ident("from"), linkModel.From).
-//		Scan(ctx); err != nil {
-//		if !strings.Contains(err.Error(), noRowsErrMessage) {
-//			wrappedErr := errorBuilder(hostHandlingErrMessage, err.Error(), linkModel.String())
-//			log.Println(wrappedErr.Error())
-//			return wrappedErr
-//		} else {
-//			id = 0
-//		}
-//	}
-//
-//	if id == 0 {
-//		if _, err := sr.db.NewInsert().Model(linkModel).Exec(ctx); err != nil {
-//			wrappedErr := errorBuilder(hostHandlingErrMessage, err.Error(), linkModel.String())
-//			log.Println(wrappedErr.Error())
-//			return wrappedErr
-//		}
-//	}
-//
-//	return nil
-//}
+
 //
 //// UpdateLink ...
 //func (sr *SQLRepository) UpdateLink(ctx context.Context, id int64, fields map[string]interface{}) error {
