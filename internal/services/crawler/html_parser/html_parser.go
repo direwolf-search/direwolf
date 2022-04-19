@@ -18,7 +18,7 @@ func NewParser() *parser {
 }
 
 func (p *parser) GetLinks(node *html.Node, url string) []map[string]interface{} {
-	var links = make([]map[string]interface{}, 0)
+	var ls = make([]map[string]interface{}, 0)
 
 	hrefs := htmlquery.Find(node, "//a")
 
@@ -33,12 +33,12 @@ func (p *parser) GetLinks(node *html.Node, url string) []map[string]interface{} 
 					"is_v3":   true,
 				}
 
-				links = append(links, l)
+				ls = append(ls, l)
 			}
 		}
 	}
 
-	return links
+	return ls
 }
 
 func (p *parser) IsOnionLink(href string) bool {
@@ -58,7 +58,7 @@ func (p *parser) trimTags(body string) string {
 	return strip.StripTags(body)
 }
 
-func (p *parser) ParseHTML(body []byte) (map[string]interface{}, error) {
+func (p *parser) ParseHTML(body []byte, url string) (map[string]interface{}, error) {
 	stringReader := strings.NewReader(string(body))
 	doc, err := htmlquery.Parse(stringReader)
 	if err != nil {
@@ -71,12 +71,13 @@ func (p *parser) ParseHTML(body []byte) (map[string]interface{}, error) {
 		"status":  true,
 		"title":   p.getTitle(doc),
 		"h1":      p.getH1(doc),
+		"links":   p.GetLinks(doc, url),
 		"md5hash": helpers.GetMd5(string(body)),
 	}, nil
 }
 
 type HTMLParser interface {
-	ParseHTML(body []byte) (map[string]interface{}, error)
+	ParseHTML(body []byte, url string) (map[string]interface{}, error)
 }
 
 func NewHTMLParser() HTMLParser {

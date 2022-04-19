@@ -29,7 +29,7 @@ func (l *Link) GetID() int64 {
 	return l.ID
 }
 
-func (l *Link) LinkToMap() map[string]interface{} {
+func (l *Link) ToMap() map[string]interface{} {
 	return map[string]interface{}{
 		"id":      l.ID,
 		"from":    l.From,
@@ -37,4 +37,38 @@ func (l *Link) LinkToMap() map[string]interface{} {
 		"snippet": l.Snippet,
 		"is_v3":   l.IsV3,
 	}
+}
+
+func FromMap(m map[string]interface{}) *Link {
+	var (
+		l = &Link{}
+	)
+
+	if v, ok := m["id"]; ok {
+		if int64Val, ok := v.(int64); ok {
+			l.ID = int64Val
+		}
+	}
+	if v, ok := m["from"]; ok {
+		if stringVal, ok := v.(string); ok {
+			l.From = stringVal
+		}
+	}
+	if v, ok := m["body"]; ok {
+		if stringVal, ok := v.(string); ok {
+			l.Body = stringVal
+		}
+	}
+	if v, ok := m["snippet"]; ok {
+		if stringVal, ok := v.(string); ok {
+			l.Snippet = stringVal
+		}
+	}
+	if v, ok := m["is_v3"]; ok {
+		if boolVal, ok := v.(bool); ok {
+			l.IsV3 = boolVal
+		}
+	}
+
+	return l
 }

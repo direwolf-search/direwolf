@@ -180,9 +180,13 @@ func (cen *CollyEngine) Visit(ctx context.Context, urls ...string) {
 	cen.engine.OnHTML("html", func(e *colly.HTMLElement) {
 		cen.Lock()
 
-		h, err := cen.htmlParser.ParseHTML(e.Response.Body)
+		h, err := cen.htmlParser.ParseHTML(e.Response.Body, e.Request.AbsoluteURL(e.Request.URL.String()))
 		if err != nil {
-			cen.logger.Error(err, "cannot parse HTML ", e.Request.URL)
+			cen.logger.Debug(
+				"CollyEngine: e.Request.AbsoluteURL(e.Request.URL.String()) = ",
+				e.Request.AbsoluteURL(e.Request.URL.String()),
+			)
+			cen.logger.Error(err, "cannot parse HTML ", e.Request.AbsoluteURL(e.Request.URL.String()))
 		}
 
 		cen.Unlock()
