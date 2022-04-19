@@ -2,8 +2,11 @@ package models
 
 import (
 	"fmt"
-	"github.com/uptrace/bun"
 	"time"
+
+	"github.com/uptrace/bun"
+
+	"direwolf/internal/domain/model/link"
 )
 
 type Link struct {
@@ -16,6 +19,26 @@ type Link struct {
 	IsV3          bool      `bun:"is_v3"`
 	CreatedAt     time.Time `bun:"created_at"`
 	UpdatedAt     time.Time `bun:"updated_at"`
+}
+
+func NewLinkFromModel(modelLink *link.Link) *Link {
+	return &Link{
+		ID:      modelLink.ID,
+		From:    modelLink.From,
+		Body:    modelLink.Body,
+		Snippet: modelLink.Snippet,
+		IsV3:    modelLink.IsV3,
+	}
+}
+
+func (l *Link) ToModel() *link.Link {
+	return &link.Link{
+		ID:      l.ID,
+		From:    l.From,
+		Body:    l.Body,
+		Snippet: l.Snippet,
+		IsV3:    l.IsV3,
+	}
 }
 
 func (l *Link) String() string {

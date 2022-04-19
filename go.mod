@@ -8,9 +8,11 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/grokify/html-strip-tags-go v0.0.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/uptrace/bun v1.1.2
+	github.com/uptrace/bun v1.1.3
 	github.com/uptrace/bun/dialect/mysqldialect v1.1.2
+	github.com/uptrace/bun/dialect/sqlitedialect v1.1.3
 	github.com/uptrace/bun/extra/bundebug v1.1.2
+	github.com/urfave/cli/v2 v2.4.0
 	golang.org/x/net v0.0.0-20220407224826-aac1ed45d8e3
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -39,7 +41,9 @@ require (
 )
 
 require (
+	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/testify v1.7.1 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect

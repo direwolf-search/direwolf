@@ -5,20 +5,19 @@ import (
 )
 
 type Host struct {
-	ID              int64
-	URL             string
-	Domain          string
-	ContentType     string
-	H1              string
-	Title           string
-	Links           []*link.Link
-	Meta            map[string]interface{}
-	Body            string
-	MD5Hash         string
-	Text            string // TODO:
-	Status          bool
-	HTTPStatus      string
-	LinksCollection bool
+	ID          int64
+	URL         string
+	Domain      string
+	ContentType string
+	H1          string
+	Title       string
+	Links       []*link.Link
+	Meta        map[string]interface{}
+	MD5Hash     string
+	Text        string // TODO:
+	Status      bool
+	HTTPStatus  string
+	LinksNum    int
 	// Keywords
 	//Ports   []*Port
 	//Server    string
@@ -34,20 +33,19 @@ func (h *Host) ToMap() map[string]interface{} {
 		ll = append(ll, linkMap)
 	}
 	return map[string]interface{}{
-		"id":              h.ID,
-		"url":             h.URL,
-		"domain":          h.Domain,
-		"content_type":    h.ContentType,
-		"h1":              h.H1,
-		"title":           h.Title,
-		"links":           ll,
-		"meta":            h.Meta,
-		"body":            h.Body,
-		"md5hash":         h.MD5Hash,
-		"text":            h.Text,
-		"status":          h.Status,
-		"http_status":     h.HTTPStatus,
-		"link_collection": h.LinksCollection,
+		"id":           h.ID,
+		"url":          h.URL,
+		"domain":       h.Domain,
+		"content_type": h.ContentType,
+		"h1":           h.H1,
+		"title":        h.Title,
+		"links":        ll,
+		"meta":         h.Meta,
+		"md5hash":      h.MD5Hash,
+		"text":         h.Text,
+		"status":       h.Status,
+		"http_status":  h.HTTPStatus,
+		"links_num":    h.LinksNum,
 	}
 }
 
@@ -109,11 +107,6 @@ func FromMap(m map[string]interface{}) *Host {
 			h.MD5Hash = stringVal
 		}
 	}
-	if v, ok := m["body"]; ok {
-		if stringVal, ok := v.(string); ok {
-			h.Body = stringVal
-		}
-	}
 	if v, ok := m["text"]; ok {
 		if stringVal, ok := v.(string); ok {
 			h.Text = stringVal
@@ -129,9 +122,9 @@ func FromMap(m map[string]interface{}) *Host {
 			h.HTTPStatus = stringVal
 		}
 	}
-	if v, ok := m["link_collection"]; ok {
-		if boolVal, ok := v.(bool); ok {
-			h.LinksCollection = boolVal
+	if v, ok := m["links_num"]; ok {
+		if intVal, ok := v.(int); ok {
+			h.LinksNum = intVal
 		}
 	}
 
