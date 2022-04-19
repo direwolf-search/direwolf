@@ -243,7 +243,7 @@ func (cen *CollyEngine) Visit(ctx context.Context, urls ...string) {
 
 // hasVisited checks if url has been visited in current task.
 //
-// since colly.CollectorHasVisited always returns nil as the second value,
+// since colly.Collector.HasVisited always returns nil as the second value,
 // we will not propagate this error.
 // https://github.com/gocolly/colly/blob/bbf3f10c37205136e9d4f46fe8118205cc505a67/colly.go#L450
 func (cen *CollyEngine) hasVisited(url string) bool {
