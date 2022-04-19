@@ -24,12 +24,12 @@ type Host struct {
 	//Proto     string
 }
 
-func (h *Host) ToMap() map[string]interface{} {
+func (h *Host) Map() map[string]interface{} {
 	var (
 		ll = make([]map[string]interface{}, 0)
 	)
 	for _, l := range h.Links {
-		linkMap := l.ToMap()
+		linkMap := l.Map()
 		ll = append(ll, linkMap)
 	}
 	return map[string]interface{}{

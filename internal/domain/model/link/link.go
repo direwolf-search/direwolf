@@ -29,7 +29,7 @@ func (l *Link) GetID() int64 {
 	return l.ID
 }
 
-func (l *Link) ToMap() map[string]interface{} {
+func (l *Link) Map() map[string]interface{} {
 	return map[string]interface{}{
 		"id":      l.ID,
 		"from":    l.From,

@@ -1,11 +1,12 @@
 package models
 
 import (
-	"direwolf/internal/domain/model/host"
-	"direwolf/internal/domain/model/link"
 	"time"
 
 	"github.com/uptrace/bun"
+
+	"direwolf/internal/domain/model/host"
+	"direwolf/internal/domain/model/link"
 )
 
 type Host struct {
@@ -18,7 +19,7 @@ type Host struct {
 	Title         string                 `bun:"title,omitempty,nullzero"`
 	Links         []*Link                `bun:"links"`                   // TODO: ?????
 	Meta          map[string]interface{} `bun:"meta,omitempty,nullzero"` // TODO: ???? flat?
-	Md5hash       string                 `bun:"md5hash"`
+	MD5Hash       string                 `bun:"md5hash"`
 	Text          string                 `bun:"text"`
 	Status        bool                   `bun:"status"`
 	HTTPStatus    string                 `bun:"http_status"`
@@ -45,12 +46,94 @@ func NewHostFromModel(h *host.Host) *Host {
 		Title:       h.Title,
 		Links:       links,
 		Meta:        h.Meta,
-		Md5hash:     h.MD5Hash,
+		MD5Hash:     h.MD5Hash,
 		Text:        h.Text,
 		Status:      h.Status,
 		HTTPStatus:  h.HTTPStatus,
 		LinksNum:    h.LinksNum,
 	}
+}
+
+func NewHostFromMap(m map[string]interface{}) *Host {
+	var (
+		h = &Host{
+			Links: make([]*Link, 0),
+			Meta:  make(map[string]interface{}),
+		}
+	)
+
+	if v, ok := m["id"]; ok {
+		if int64Val, ok := v.(int64); ok {
+			h.ID = int64Val
+		}
+	}
+	if v, ok := m["url"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.URL = stringVal
+		}
+	}
+	if v, ok := m["domain"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.Domain = stringVal
+		}
+	}
+	if v, ok := m["content_type"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.ContentType = stringVal
+		}
+	}
+	if v, ok := m["h1"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.H1 = stringVal
+		}
+	}
+	if v, ok := m["title"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.Title = stringVal
+		}
+	}
+	if v, ok := m["links"]; ok {
+		if sl, ok := v.([]interface{}); ok {
+			for _, interfaceVal := range sl {
+				if mapVal, ok := interfaceVal.(map[string]interface{}); ok {
+					l := NewLinkFromMap(mapVal)
+					h.Links = append(h.Links, l)
+				}
+			}
+		}
+	}
+	if v, ok := m["meta"]; ok {
+		if mapVal, ok := v.(map[string]interface{}); ok {
+			h.Meta = mapVal
+		}
+	}
+	if v, ok := m["md5hash"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.MD5Hash = stringVal
+		}
+	}
+	if v, ok := m["text"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.Text = stringVal
+		}
+	}
+	if v, ok := m["status"]; ok {
+		if boolVal, ok := v.(bool); ok {
+			h.Status = boolVal
+		}
+	}
+	if v, ok := m["http_status"]; ok {
+		if stringVal, ok := v.(string); ok {
+			h.HTTPStatus = stringVal
+		}
+	}
+	if v, ok := m["links_num"]; ok {
+		if intVal, ok := v.(int); ok {
+			h.LinksNum = intVal
+		}
+	}
+
+	return h
 }
 
 func (h *Host) ToModel() *host.Host {
@@ -68,7 +151,7 @@ func (h *Host) ToModel() *host.Host {
 		Title:       h.Title,
 		Links:       links,
 		Meta:        h.Meta,
-		MD5Hash:     h.Md5hash,
+		MD5Hash:     h.MD5Hash,
 		Text:        h.Text,
 		Status:      h.Status,
 		HTTPStatus:  h.HTTPStatus,
