@@ -15,7 +15,7 @@ func (a *Adapter) ConvertHostToModel(hostEntity *host.Host) *models.Host {
 	return &models.Host{
 		H1:        hostEntity.H1,
 		Title:     hostEntity.Title,
-		Hash:      hostEntity.Hash,
+		Hash:      hostEntity.MD5Hash,
 		Text:      hostEntity.Text,
 		URL:       hostEntity.URL,
 		Status:    hostEntity.Status,
