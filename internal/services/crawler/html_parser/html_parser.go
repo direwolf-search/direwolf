@@ -66,7 +66,6 @@ func (p *parser) ParseHTML(body []byte, url string) (map[string]interface{}, err
 	}
 
 	return map[string]interface{}{
-		"body":    string(body),
 		"text":    p.trimTags(string(body)),
 		"status":  true,
 		"title":   p.getTitle(doc),

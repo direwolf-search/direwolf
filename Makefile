@@ -1,14 +1,11 @@
 # Makefile of DireWolf project
 SHELL = /bin/bash
 
-
-
-# prerequisites
+# Prerequisites
 ###############
 
 # dirs
 SRC_DIR := internal
-CONCRETE_SERVICES_SRC_DIR := $(SRC_DIR)/services
 
 # version
 REV_LIST := $(shell git rev-list --tags --max-count=1)
@@ -53,8 +50,6 @@ ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
   GOTESTS_GENERATE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(GOTESTS_GENERATE_ARGS):;@:)
 endif
-
-
 
 # Targets
 ##########

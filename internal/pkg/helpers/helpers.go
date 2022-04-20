@@ -24,3 +24,13 @@ func GetMd5(fields ...string) string {
 	}
 	return fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
 }
+
+// ErrorBuilder builds error from error message and additional fields.
+// Error message must be a first element in argument list.
+func ErrorBuilder(fields ...interface{}) error {
+	var formatString = ""
+	for i := 0; i < len(fields); i++ {
+		formatString += " %v"
+	}
+	return fmt.Errorf(formatString, fields...)
+}

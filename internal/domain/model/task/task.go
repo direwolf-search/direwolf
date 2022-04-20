@@ -1,12 +1,17 @@
 // Package task defines a model of a certain task intended for a certain service
 package task
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrInvalidTask = errors.New("error of invalid task")
 
 type typeOfTask struct {
 	// service that owns the task
 	of string
-	// link selection rule
+	// rule is an execution rule
 	rule string
 }
 
@@ -14,7 +19,7 @@ func (t *typeOfTask) String() string {
 	return fmt.Sprintf("%s.%s", t.of, t.rule)
 }
 
-// Task is a schedulable task for some service.
+// Task is a scheduled task for some service.
 type Task struct {
 	id       int64
 	taskType *typeOfTask
@@ -22,7 +27,7 @@ type Task struct {
 	skipNext bool
 }
 
-// NewTask creates new task
+// NewTask creates new *Task
 func NewTask(taskType *typeOfTask, schedule string, skipNext bool) *Task {
 	return &Task{
 		taskType: taskType,
@@ -31,52 +36,109 @@ func NewTask(taskType *typeOfTask, schedule string, skipNext bool) *Task {
 	}
 }
 
-func (ct *Task) ToMap() map[string]interface{} {
+// NewTaskFromMap creates new *Task from map[string]interface{}
+func NewTaskFromMap(m map[string]interface{}) (*Task, error) {
 	var (
-		m = make(map[string]interface{})
-		t = make(map[string]interface{})
+		of, rule, schedule string
+		skipNext           bool
 	)
 
-	if ct.id != 0 {
-		m["id"] = ct.id
+	if v, ok := m["of"]; ok {
+		if stringVal, ok := v.(string); ok {
+			of = stringVal
+		}
 	}
-	if ct.taskType != nil {
-		t["of"] = ct.taskType.of
-		m["rule"] = ct.taskType.rule
+
+	if v, ok := m["rule"]; ok {
+		if stringVal, ok := v.(string); ok {
+			rule = stringVal
+		}
 	}
-	if ct.schedule != "" {
-		m["schedule"] = ct.schedule
+
+	if v, ok := m["schedule"]; ok {
+		if stringVal, ok := v.(string); ok {
+			schedule = stringVal
+		}
 	}
-	if !ct.skipNext {
-		m["skip_next"] = ct.skipNext
+
+	if v, ok := m["skip_next"]; ok {
+		if boolVal, ok := v.(bool); ok {
+			skipNext = boolVal
+		}
+	}
+
+	t := &Task{
+		taskType: &typeOfTask{
+			of:   of,
+			rule: rule,
+		},
+		schedule: schedule,
+		skipNext: skipNext,
+	}
+
+	err := t.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
+}
+
+// Map creates map[string]interface{} from *Task
+func (t *Task) Map() map[string]interface{} {
+	var (
+		m = make(map[string]interface{})
+		//t = make(map[string]interface{})
+	)
+
+	if t.id != 0 {
+		m["id"] = t.id
+	}
+	if t.taskType != nil {
+		m["of"] = t.taskType.of
+		m["rule"] = t.taskType.rule
+	}
+	if t.schedule != "" {
+		m["schedule"] = t.schedule
+	}
+	if !t.skipNext {
+		m["skip_next"] = t.skipNext
 	}
 
 	return m
 }
 
 // Of returns `of` field of the taskType field
-func (ct *Task) Of() string {
-	return ct.taskType.of
+func (t *Task) Of() string {
+	return t.taskType.of
 }
 
 // Rule returns rule field of the taskType field
-func (ct *Task) Rule() string {
-	return ct.taskType.rule
+func (t *Task) Rule() string {
+	return t.taskType.rule
 }
 
 // Schedule returns task's schedule field
-func (ct *Task) Schedule() string {
-	return ct.schedule
+func (t *Task) Schedule() string {
+	return t.schedule
 }
 
 // SkipNext returns task's skipNext field
-func (ct *Task) SkipNext() bool {
-	return ct.skipNext
+func (t *Task) SkipNext() bool {
+	return t.skipNext
 }
 
 // ID returns task's id field
-func (ct *Task) ID() int64 {
-	return ct.id
+func (t *Task) ID() int64 {
+	return t.id
+}
+
+func (t *Task) Validate() error {
+	if t.schedule == "" {
+		return ErrInvalidTask
+	}
+
+	return nil
 }
 
 /*

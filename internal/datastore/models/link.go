@@ -1,10 +1,16 @@
 package models
 
 import (
+	"errors"
 	"fmt"
-	"github.com/uptrace/bun"
 	"time"
+
+	"github.com/uptrace/bun"
+
+	"direwolf/internal/domain/model/link"
 )
+
+var ErrInvalidLink = errors.New("error of invalid db link")
 
 type Link struct {
 	bun.BaseModel `bun:"links"`
@@ -18,6 +24,73 @@ type Link struct {
 	UpdatedAt     time.Time `bun:"updated_at"`
 }
 
+func NewLinkFromModel(modelLink *link.Link) *Link {
+	return &Link{
+		ID:      modelLink.ID,
+		From:    modelLink.From,
+		Body:    modelLink.Body,
+		Snippet: modelLink.Snippet,
+		IsV3:    modelLink.IsV3,
+	}
+}
+
+func NewLinkFromMap(m map[string]interface{}) (*Link, error) {
+	var (
+		l = &Link{}
+	)
+	if v, ok := m["from"]; ok {
+		if stringVal, ok := v.(string); ok {
+			l.From = stringVal
+		}
+	}
+	if v, ok := m["body"]; ok {
+		if stringVal, ok := v.(string); ok {
+			l.Body = stringVal
+		}
+	}
+
+	err := l.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	if v, ok := m["id"]; ok {
+		if int64Val, ok := v.(int64); ok {
+			l.ID = int64Val
+		}
+	}
+	if v, ok := m["snippet"]; ok {
+		if stringVal, ok := v.(string); ok {
+			l.Snippet = stringVal
+		}
+	}
+	if v, ok := m["is_v3"]; ok {
+		if boolVal, ok := v.(bool); ok {
+			l.IsV3 = boolVal
+		}
+	}
+
+	return l, nil
+}
+
+func (l *Link) ToModel() *link.Link {
+	return &link.Link{
+		ID:      l.ID,
+		From:    l.From,
+		Body:    l.Body,
+		Snippet: l.Snippet,
+		IsV3:    l.IsV3,
+	}
+}
+
 func (l *Link) String() string {
 	return fmt.Sprintf(" Link from: %s, body: %s", l.From, l.Body)
+}
+
+func (l *Link) Validate() error {
+	if l.From == "" || l.Body == "" {
+		return ErrInvalidLink
+	}
+
+	return nil
 }

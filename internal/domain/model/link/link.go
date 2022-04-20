@@ -1,5 +1,11 @@
 package link
 
+import (
+	"errors"
+)
+
+var ErrInvalidLink = errors.New("error of invalid link")
+
 type Link struct {
 	// ID is a DB identifier of Link
 	ID int64
@@ -29,7 +35,7 @@ func (l *Link) GetID() int64 {
 	return l.ID
 }
 
-func (l *Link) ToMap() map[string]interface{} {
+func (l *Link) Map() map[string]interface{} {
 	return map[string]interface{}{
 		"id":      l.ID,
 		"from":    l.From,
@@ -39,16 +45,11 @@ func (l *Link) ToMap() map[string]interface{} {
 	}
 }
 
-func FromMap(m map[string]interface{}) *Link {
+func FromMap(m map[string]interface{}) (*Link, error) {
 	var (
 		l = &Link{}
 	)
 
-	if v, ok := m["id"]; ok {
-		if int64Val, ok := v.(int64); ok {
-			l.ID = int64Val
-		}
-	}
 	if v, ok := m["from"]; ok {
 		if stringVal, ok := v.(string); ok {
 			l.From = stringVal
@@ -59,6 +60,18 @@ func FromMap(m map[string]interface{}) *Link {
 			l.Body = stringVal
 		}
 	}
+
+	err := l.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	if v, ok := m["id"]; ok {
+		if int64Val, ok := v.(int64); ok {
+			l.ID = int64Val
+		}
+	}
+
 	if v, ok := m["snippet"]; ok {
 		if stringVal, ok := v.(string); ok {
 			l.Snippet = stringVal
@@ -70,5 +83,13 @@ func FromMap(m map[string]interface{}) *Link {
 		}
 	}
 
-	return l
+	return l, nil
+}
+
+func (l *Link) Validate() error {
+	if l.From == "" || l.Body == "" {
+		return ErrInvalidLink
+	}
+
+	return nil
 }
