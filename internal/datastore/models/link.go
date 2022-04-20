@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -8,6 +9,8 @@ import (
 
 	"direwolf/internal/domain/model/link"
 )
+
+var ErrInvalidLink = errors.New("error of invalid db link")
 
 type Link struct {
 	bun.BaseModel `bun:"links"`
@@ -31,16 +34,10 @@ func NewLinkFromModel(modelLink *link.Link) *Link {
 	}
 }
 
-func NewLinkFromMap(m map[string]interface{}) *Link {
+func NewLinkFromMap(m map[string]interface{}) (*Link, error) {
 	var (
 		l = &Link{}
 	)
-
-	if v, ok := m["id"]; ok {
-		if int64Val, ok := v.(int64); ok {
-			l.ID = int64Val
-		}
-	}
 	if v, ok := m["from"]; ok {
 		if stringVal, ok := v.(string); ok {
 			l.From = stringVal
@@ -49,6 +46,17 @@ func NewLinkFromMap(m map[string]interface{}) *Link {
 	if v, ok := m["body"]; ok {
 		if stringVal, ok := v.(string); ok {
 			l.Body = stringVal
+		}
+	}
+
+	err := l.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	if v, ok := m["id"]; ok {
+		if int64Val, ok := v.(int64); ok {
+			l.ID = int64Val
 		}
 	}
 	if v, ok := m["snippet"]; ok {
@@ -62,7 +70,7 @@ func NewLinkFromMap(m map[string]interface{}) *Link {
 		}
 	}
 
-	return l
+	return l, nil
 }
 
 func (l *Link) ToModel() *link.Link {
@@ -77,4 +85,12 @@ func (l *Link) ToModel() *link.Link {
 
 func (l *Link) String() string {
 	return fmt.Sprintf(" Link from: %s, body: %s", l.From, l.Body)
+}
+
+func (l *Link) Validate() error {
+	if l.From == "" || l.Body == "" {
+		return ErrInvalidLink
+	}
+
+	return nil
 }

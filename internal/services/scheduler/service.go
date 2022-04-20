@@ -39,7 +39,7 @@ func (s *service) GetTasks(ctx context.Context) ([]*task.Task, error) {
 
 // ScheduleTask sets a task to run with its schedule
 func (s *service) ScheduleTask(task *task.Task, jobFunc func()) {
-	taskmap := task.ToMap()
+	taskmap := task.Map()
 	s.scheduler.Schedule(taskmap, jobFunc)
 }
 

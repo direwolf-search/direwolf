@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -8,6 +9,8 @@ import (
 	"direwolf/internal/domain/model/host"
 	"direwolf/internal/domain/model/link"
 )
+
+var ErrInvalidHost = errors.New("error of invalid db host")
 
 type Host struct {
 	bun.BaseModel `bun:"hosts"`
@@ -54,7 +57,7 @@ func NewHostFromModel(h *host.Host) *Host {
 	}
 }
 
-func NewHostFromMap(m map[string]interface{}) *Host {
+func NewHostFromMap(m map[string]interface{}) (*Host, error) {
 	var (
 		h = &Host{
 			Links: make([]*Link, 0),
@@ -62,16 +65,17 @@ func NewHostFromMap(m map[string]interface{}) *Host {
 		}
 	)
 
-	if v, ok := m["id"]; ok {
-		if int64Val, ok := v.(int64); ok {
-			h.ID = int64Val
-		}
-	}
 	if v, ok := m["url"]; ok {
 		if stringVal, ok := v.(string); ok {
 			h.URL = stringVal
 		}
 	}
+
+	err := h.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	if v, ok := m["domain"]; ok {
 		if stringVal, ok := v.(string); ok {
 			h.Domain = stringVal
@@ -96,7 +100,7 @@ func NewHostFromMap(m map[string]interface{}) *Host {
 		if sl, ok := v.([]interface{}); ok {
 			for _, interfaceVal := range sl {
 				if mapVal, ok := interfaceVal.(map[string]interface{}); ok {
-					l := NewLinkFromMap(mapVal)
+					l, _ := NewLinkFromMap(mapVal)
 					h.Links = append(h.Links, l)
 				}
 			}
@@ -133,7 +137,7 @@ func NewHostFromMap(m map[string]interface{}) *Host {
 		}
 	}
 
-	return h
+	return h, nil
 }
 
 func (h *Host) ToModel() *host.Host {
@@ -157,4 +161,12 @@ func (h *Host) ToModel() *host.Host {
 		HTTPStatus:  h.HTTPStatus,
 		LinksNum:    h.LinksNum,
 	}
+}
+
+func (h *Host) Validate() error {
+	if h.URL == "" {
+		return ErrInvalidHost
+	}
+
+	return nil
 }

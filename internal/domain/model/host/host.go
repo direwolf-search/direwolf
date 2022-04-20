@@ -1,8 +1,12 @@
+// Package host defines a model of the host in Tor network
 package host
 
 import (
 	"direwolf/internal/domain/model/link"
+	"errors"
 )
+
+var ErrInvalidHost = errors.New("error of invalid host")
 
 type Host struct {
 	ID          int64
@@ -49,7 +53,7 @@ func (h *Host) Map() map[string]interface{} {
 	}
 }
 
-func FromMap(m map[string]interface{}) *Host {
+func FromMap(m map[string]interface{}) (*Host, error) {
 	var (
 		h = &Host{
 			Links: make([]*link.Link, 0),
@@ -57,14 +61,20 @@ func FromMap(m map[string]interface{}) *Host {
 		}
 	)
 
-	if v, ok := m["id"]; ok {
-		if int64Val, ok := v.(int64); ok {
-			h.ID = int64Val
-		}
-	}
 	if v, ok := m["url"]; ok {
 		if stringVal, ok := v.(string); ok {
 			h.URL = stringVal
+		}
+	}
+
+	err := h.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	if v, ok := m["id"]; ok {
+		if int64Val, ok := v.(int64); ok {
+			h.ID = int64Val
 		}
 	}
 	if v, ok := m["domain"]; ok {
@@ -91,7 +101,7 @@ func FromMap(m map[string]interface{}) *Host {
 		if sl, ok := v.([]interface{}); ok {
 			for _, interfaceVal := range sl {
 				if mapVal, ok := interfaceVal.(map[string]interface{}); ok {
-					l := link.FromMap(mapVal)
+					l, _ := link.FromMap(mapVal)
 					h.Links = append(h.Links, l)
 				}
 			}
@@ -128,11 +138,19 @@ func FromMap(m map[string]interface{}) *Host {
 		}
 	}
 
-	return h
+	return h, nil
 }
 
 // GetID returns host's ID.
 // Host implements model.IDEntityGetter interface
 func (h *Host) GetID() int64 {
 	return h.ID
+}
+
+func (h *Host) Validate() error {
+	if h.URL == "" {
+		return ErrInvalidHost
+	}
+
+	return nil
 }
