@@ -1,8 +1,9 @@
-package sql
+package bunsql
 
 import (
 	"context"
 	"database/sql"
+	"direwolf/internal/domain/model/task"
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -13,6 +14,7 @@ import (
 
 	//"direwolf/internal/datastore/helpers"
 	"direwolf/internal/datastore/models"
+	"direwolf/internal/datastore/repository/engine"
 	"direwolf/internal/domain"
 	"direwolf/internal/domain/model/host"
 	"direwolf/internal/domain/model/link"
@@ -22,6 +24,9 @@ import (
 var (
 	noRowsErrMessage                 = "sql: no rows in result set"
 	errorOfConvertMapToHost          = "error of convert map to host"
+	errorGetTaskByID                 = "error of get task by id"
+	errorGetAllUrls                  = "error of selecting all hosts urls"
+	errorGetAllTasks                 = "error of selecting all tasks"
 	errorOfConvertMapToLink          = "error of convert map to link"
 	errorOfCheckIfHostExists         = "error of check if host exists"
 	errorOfCheckIfLinkExists         = "error of check if link exists"
@@ -33,40 +38,6 @@ var (
 	notImplementedErrMessage         = "not implemented yet"
 	errLinkInsert                    = "error of link inserting"
 )
-
-//type RepositorySQL struct {
-//	logger domain.Logger
-//	db     *bun.DB
-//}
-//
-//// RepositorySQL ...
-//type RepositorySQL struct {
-//	Direct *bun.DB
-//	Repo   *RepositorySQL
-//}
-//
-//// NewRepositorySQL ...
-//// TODO:NewRepositorySQL(dialect schema.Dialect, dsn string)
-//func NewRepositorySQL(dialect schema.Dialect, logger domain.Logger) (*RepositorySQL, error) {
-//	dsn := os.Getenv("DW_DEFAULT_TOR_CRAWLER_DSN")
-//	db := bun.NewDB(connToDB(dsn), dialect)
-//
-//	if err := db.Ping(); err != nil {
-//		logger.Fatal(pkghelpers.ErrorBuilder(establishingConnectionErrMessage, err.Error()), "") // TODO: msg arg
-//		return nil, err
-//	}
-//
-//	// Print all queries to stdout.
-//	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
-//
-//	return &RepositorySQL{
-//		Direct: db,
-//		Repo: &RepositorySQL{
-//			db:     db,
-//			logger: logger,
-//		},
-//	}, nil
-//}
 
 type RepositorySQL struct {
 	logger domain.Logger
@@ -90,21 +61,27 @@ func NewRepositorySQL(logger domain.Logger, sqlDB *sql.DB) (*RepositorySQL, erro
 	}, nil
 }
 
+// *RepositorySQL implements DBEngine interface
+
+func (sr *RepositorySQL) GetEngineType() string {
+	return engine.SQL.String()
+}
+
 func (sr *RepositorySQL) InsertHost(ctx context.Context, h *host.Host) error {
 	var (
-		host = models.NewHostFromModel(h)
+		dbHost = models.NewHostFromModel(h)
 	)
 	// check if host already exists in DB
 	exist, err := sr.HostExists(ctx, h.URL)
 	if err != nil {
 		err := pkghelpers.ErrorBuilder(errorOfCheckIfHostExists, err.Error())
-		sr.logger.Error(err, host.URL)
+		sr.logger.Error(err, dbHost.URL)
 	}
 	// if host is not exists, insert it
 	if !exist {
-		if _, err := sr.db.NewInsert().Model(host).Exec(ctx); err != nil {
+		if _, err := sr.db.NewInsert().Model(dbHost).Exec(ctx); err != nil {
 			err := pkghelpers.ErrorBuilder(hostHandlingErrMessage, err.Error())
-			sr.logger.Error(err, host.URL)
+			sr.logger.Error(err, dbHost.URL)
 			return err
 		}
 	}
@@ -129,7 +106,7 @@ func (sr *RepositorySQL) HostExists(ctx context.Context, url string) (bool, erro
 
 func (sr *RepositorySQL) InsertLink(ctx context.Context, l *link.Link) error {
 	var (
-		link = models.NewLinkFromModel(l)
+		dbLink = models.NewLinkFromModel(l)
 	)
 	// check if link already exists in DB
 	exist, err := sr.LinkExists(ctx, l.Body, l.From)
@@ -140,7 +117,7 @@ func (sr *RepositorySQL) InsertLink(ctx context.Context, l *link.Link) error {
 	}
 
 	if !exist {
-		if _, err := sr.db.NewInsert().Model(link).Exec(ctx); err != nil {
+		if _, err := sr.db.NewInsert().Model(dbLink).Exec(ctx); err != nil {
 			err := pkghelpers.ErrorBuilder(errLinkInsert, err.Error())
 			sr.logger.Error(err, "", map[string]interface{}{"link.Body": l.Body, "link.From": l.From})
 			return err
@@ -150,39 +127,28 @@ func (sr *RepositorySQL) InsertLink(ctx context.Context, l *link.Link) error {
 	return nil
 }
 
-func (sr *RepositorySQL) UpdateHostByURL(ctx context.Context, url string, fields map[string]interface{}) error {
-	res, err := sr.db.NewUpdate().
-		Model(&fields).
-		TableExpr("hosts").
-		Where("? = ?", bun.Ident("url"), url).
-		Exec(ctx)
-
-	if err != nil {
-		err := pkghelpers.ErrorBuilder(hostHandlingErrMessage, err.Error())
-		sr.logger.Error(err, url)
-		return err
-	}
-
-	num, _ := res.RowsAffected()
-	if num != 1 {
-		return pkghelpers.ErrorBuilder(hostHandlingErrMessage, url)
-	}
-
-	return nil
-}
-
 func (sr *RepositorySQL) GetAllHosts(ctx context.Context) ([]*host.Host, error) {
-	var hosts = make([]*host.Host, 0)
+	var (
+		dbHosts     = make([]*models.Host, 0)
+		domainHosts = make([]*host.Host, 0)
+	)
 	if err := sr.db.NewSelect().
 		Model((*models.Host)(nil)).
 		ColumnExpr("*").
-		OrderExpr("id ASC").Scan(ctx, &hosts); err != nil {
+		OrderExpr("id ASC").Scan(ctx, &dbHosts); err != nil {
 		err = pkghelpers.ErrorBuilder(hostHandlingErrMessage, err.Error())
 		sr.logger.Error(err, "")
 		return nil, err
 	}
 
-	return hosts, nil
+	if len(dbHosts) > 0 {
+		for _, dbh := range dbHosts {
+			domainHosts = append(domainHosts, dbh.ToModel())
+		}
+
+	}
+
+	return domainHosts, nil
 }
 
 func (sr *RepositorySQL) InsertHostOrLink(ctx context.Context, entity map[string]interface{}) error {
@@ -282,6 +248,65 @@ func (sr *RepositorySQL) UpdateHost(ctx context.Context, entity map[string]inter
 	}
 
 	return nil
+}
+
+// *RepositorySQL implements crawler.Repository interface
+
+func (sr *RepositorySQL) GetAll(ctx context.Context) ([]string, error) {
+	var (
+		urls = make([]string, 0)
+	)
+
+	if err := sr.db.NewSelect().Model(&models.Host{}).Column("url").Scan(ctx, &urls); err != nil || len(urls) == 0 {
+		err = pkghelpers.ErrorBuilder(errorGetAllUrls)
+		sr.logger.Error(err, "")
+		return nil, err
+	}
+
+	return urls, nil
+}
+
+// *RepositorySQL implements scheduler.Repository interface
+
+func (sr *RepositorySQL) ByType(ctx context.Context, taskType string) ([]*task.Task, error) {
+	var (
+		domainTasks = make([]*task.Task, 0)
+		dbTasks     = make([]*models.Task, 0)
+	)
+
+	if err := sr.db.NewSelect().
+		Model((*models.Host)(nil)).
+		ColumnExpr("*").
+		Where("Of = ?", taskType).Scan(ctx, &dbTasks); err != nil {
+		err = pkghelpers.ErrorBuilder(errorGetAllTasks)
+		sr.logger.Error(err, "")
+		return nil, err
+	}
+
+	if len(dbTasks) > 0 {
+		for _, dbt := range dbTasks {
+			domainTasks = append(domainTasks, dbt.ToModel())
+		}
+
+	}
+
+	return domainTasks, nil
+}
+
+func (sr *RepositorySQL) ByID(ctx context.Context, id int64) (*task.Task, error) {
+	var (
+		t = &task.Task{}
+	)
+
+	if err := sr.db.NewSelect().Model(t).
+		ColumnExpr("*").
+		Where("id = ?", id).Scan(ctx); err != nil {
+		err = pkghelpers.ErrorBuilder(errorGetTaskByID)
+		sr.logger.Error(err, "")
+		return nil, err
+	}
+
+	return t, nil
 }
 
 func (sr *RepositorySQL) GetHostByID(ctx context.Context, id int64) (*host.Host, error) {

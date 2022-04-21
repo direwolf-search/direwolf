@@ -1,19 +1,19 @@
-package enginerepository
+package crawlerrepository
 
 import (
 	"direwolf/internal/datastore/repository/engine"
-	domainengine "direwolf/internal/domain/repository/crawler/engine"
+	domaincrawler "direwolf/internal/domain/repository/crawler"
 	pkghelpers "direwolf/internal/pkg/helpers"
 )
 
 var (
-	ErrFakeEngine       = "this is fake error from NewEngineRepository()"
+	ErrFakeCrawler      = "this is fake error from NewCrawlerRepository()"
 	ErrRepositoryCreate = "error of create new crawler repository"
 )
 
-func NewEngineRepository(dbEngine engine.DBEngine) (domainengine.Repository, error) {
+func NewCrawlerRepository(dbEngine engine.DBEngine) (domaincrawler.Repository, error) {
 	if dbEngine.GetEngineType() == engine.SQL.String() {
-		if sqlEngine, ok := dbEngine.(domainengine.Repository); ok {
+		if sqlEngine, ok := dbEngine.(domaincrawler.Repository); ok {
 			return sqlEngine, nil
 		} else {
 			return nil, pkghelpers.ErrorBuilder(ErrRepositoryCreate)
@@ -22,7 +22,7 @@ func NewEngineRepository(dbEngine engine.DBEngine) (domainengine.Repository, err
 
 	// other repository engine types can be injected here:
 	// 		if dbEngine.GetEngineType() == engine.NoSQL.String() {
-	//			if sqlEngine, ok := dbEngine.(domainengine.Repository); ok {
+	//			if sqlEngine, ok := dbEngine.(domaincrawler.Repository); ok {
 	//				return sqlEngine, nil
 	//			} else {
 	//				return nil, pkghelpers.ErrorBuilder(ErrRepositoryCreate)
@@ -30,5 +30,5 @@ func NewEngineRepository(dbEngine engine.DBEngine) (domainengine.Repository, err
 	//		}
 	//
 
-	return nil, pkghelpers.ErrorBuilder(ErrFakeEngine)
+	return nil, pkghelpers.ErrorBuilder(ErrFakeCrawler)
 }
