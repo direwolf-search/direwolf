@@ -28,9 +28,10 @@ type Task struct {
 }
 
 // NewTask creates new *Task
-func NewTask(taskType *typeOfTask, schedule string, skipNext bool) *Task {
+func NewTask(id int64, of, rule, schedule string, skipNext bool) *Task {
 	return &Task{
-		taskType: taskType,
+		id:       id,
+		taskType: &typeOfTask{of: of, rule: rule},
 		schedule: schedule,
 		skipNext: skipNext,
 	}
