@@ -3,6 +3,7 @@ module direwolf
 go 1.17
 
 require (
+	github.com/amacneil/dbmate v1.15.0
 	github.com/antchfx/htmlquery v1.2.4
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gocolly/colly/v2 v2.1.0
