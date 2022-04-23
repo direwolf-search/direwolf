@@ -1,4 +1,5 @@
 # Makefile of DireWolf project
+include .env
 SHELL = /bin/bash
 
 # Prerequisites
@@ -6,23 +7,12 @@ SHELL = /bin/bash
 
 # dirs
 SRC_DIR := internal
-BIN_DIR := bin
-DW_MIGRATIONS_BIN_DIR := migrate
-DW_MIGRATIONS_SRC_DIR := cmd/migrate
 
-DW_MIGRATIONS_BUILD_TARGET := dw-migrations
-
-# migrate subcommands
-DB_COMMAND := db
-INIT_COMMAND := init
+# commands to make db migrations
+NEW_MIGRATION_COMMAND := new
 MIGRATE_COMMAND := migrate
 ROLLBACK_COMMAND := rollback
-LOCK_COMMAND := lock
-UNLOCK_COMMAND := unlock
-CREATE_GO_COMMAND := create_go
-CREATE_SQL_COMMAND :=create_sql
 STATUS_COMMAND := status
-MARK_APPLIED := mark_applied
 
 # version
 REV_LIST := $(shell git rev-list --tags --max-count=1)
@@ -35,10 +25,7 @@ TEST_SUFFIX := _test.go
 CHANGELOG := changelog
 GOTESTS := gotests
 GIT := git
-
-# go compiler
-GO := go build
-
+DBMATE = dbmate #-e $(DATABASE_URL)
 
 # parse arguments for changelog-init target
 ifeq (changelog-init,$(firstword $(MAKECMDGOALS)))
@@ -71,9 +58,9 @@ ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
 endif
 
 # parse arguments for migrate-create-go target
-ifeq (migrate-create-go,$(firstword $(MAKECMDGOALS)))
-  MIGRATE_CREATE_GO_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(MIGRATE_CREATE_GO_ARGS):;@:)
+ifeq (migration-new,$(firstword $(MAKECMDGOALS)))
+  NEW_MIGRATION_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(NEW_MIGRATION_ARGS):;@:)
 endif
 
 # Targets
@@ -96,7 +83,7 @@ dummy-changelog-init:
 dummy-changelog-finalize:
 	# ...
 
-dummy-migrate-create-go:
+dummy-migration-new:
 	# ...
 
 .PHONY: help #                      -- Shows help message
@@ -118,7 +105,7 @@ version:
 
 .PHONY: clean #                     -- removes protoc code generation artifacts
 clean:
-	@rm -R gen
+	@rm $(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET)
 
 # changelog commands
 
@@ -167,7 +154,7 @@ gotests-check:
 gotests-generate: dummy-generate-test
 	@$(GOTESTS) -all -template testify $(SRC_DIR)/$(GOTESTS_GENERATE_ARGS) >> $(SRC_DIR)/$(basename $(GOTESTS_GENERATE_ARGS))$(TEST_SUFFIX)
 
-# manage remotes commands
+# push to remotes commands
 
 .PHONY: push-bitbucket #            -- Pushes to bitbucket remote
 push-bitbucket: dummy-push-bitbucket
@@ -177,40 +164,21 @@ push-bitbucket: dummy-push-bitbucket
 push-origin: dummy-push-origin
 	@$(GIT) push -u origin $(PUSH_ORIGIN_ARGS)
 
-# migrate commands
+# migration commands with dbmate under the hood
 
-.PHONY: migrate-build
-migrate-build:
-	@$(GO) -o $(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DW_MIGRATIONS_SRC_DIR)/main.go
+.PHONY: migration-new #             -- Creates Go migration
+migration-new:
+	@$(DBMATE) $(NEW_MIGRATION_COMMAND) $(NEW_MIGRATION_ARGS) --no-dump-schema
 
-.PHONY: migrate-create-go
-migrate-create-go:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(CREATE_GO_COMMAND) $(MIGRATE_CREATE_GO_ARGS)
+.PHONY: migration-migrate #         -- Migrates database
+migration-migrate:
+	@$(DBMATE) $(MIGRATE_COMMAND) --no-dump-schema
 
-.PHONY: migrate-init
-migrate-init:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(INIT_COMMAND)
+.PHONY: migration-rollback #        -- Rollbacks the last migration group
+migration-rollback:
+	@$(DBMATE) $(ROLLBACK_COMMAND) --no-dump-schema
 
-.PHONY: migrate-migrate
-migrate-migrate:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(MIGRATE_COMMAND)
+.PHONY: migration-status #           -- Prints migrations status
+migration-status:
+	@$(DBMATE) $(STATUS_COMMAND)
 
-.PHONY: migrate-rollback
-migrate-rollback:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(ROLLBACK_COMMAND)
-
-.PHONY: migrate-lock
-migrate-lock:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(LOCK_COMMAND)
-
-.PHONY: migrate-unlock
-migrate-unlock:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(UNLOCK_COMMAND)
-
-.PHONY: migrate-status
-migrate-status:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(STATUS_COMMAND)
-
-.PHONY: migrate-mark-applied
-migrate-mark-applied:
-	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(MARK_APPLIED)
