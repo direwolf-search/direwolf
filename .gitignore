@@ -8,3 +8,4 @@ docs/openapi2protofiles/
 build/generated/
 _test/
 .env
+db/migrations/.env
