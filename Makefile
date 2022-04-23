@@ -6,6 +6,23 @@ SHELL = /bin/bash
 
 # dirs
 SRC_DIR := internal
+BIN_DIR := bin
+DW_MIGRATIONS_BIN_DIR := migrate
+DW_MIGRATIONS_SRC_DIR := cmd/migrate
+
+DW_MIGRATIONS_BUILD_TARGET := dw-migrations
+
+# migrate subcommands
+DB_COMMAND := db
+INIT_COMMAND := init
+MIGRATE_COMMAND := migrate
+ROLLBACK_COMMAND := rollback
+LOCK_COMMAND := lock
+UNLOCK_COMMAND := unlock
+CREATE_GO_COMMAND := create_go
+CREATE_SQL_COMMAND :=create_sql
+STATUS_COMMAND := status
+MARK_APPLIED := mark_applied
 
 # version
 REV_LIST := $(shell git rev-list --tags --max-count=1)
@@ -19,6 +36,8 @@ CHANGELOG := changelog
 GOTESTS := gotests
 GIT := git
 
+# go compiler
+GO := go build
 
 
 # parse arguments for changelog-init target
@@ -51,6 +70,12 @@ ifeq (gotests-generate,$(firstword $(MAKECMDGOALS)))
   $(eval $(GOTESTS_GENERATE_ARGS):;@:)
 endif
 
+# parse arguments for migrate-create-go target
+ifeq (migrate-create-go,$(firstword $(MAKECMDGOALS)))
+  MIGRATE_CREATE_GO_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(MIGRATE_CREATE_GO_ARGS):;@:)
+endif
+
 # Targets
 ##########
 
@@ -69,6 +94,9 @@ dummy-changelog-init:
 	# ...
 
 dummy-changelog-finalize:
+	# ...
+
+dummy-migrate-create-go:
 	# ...
 
 .PHONY: help #                      -- Shows help message
@@ -91,6 +119,8 @@ version:
 .PHONY: clean #                     -- removes protoc code generation artifacts
 clean:
 	@rm -R gen
+
+# changelog commands
 
 .PHONY: changelog-check #           -- Checks if changelog installed
 changelog-check:
@@ -123,6 +153,8 @@ changelog-finalize: dummy-changelog-finalize
 changelog-out:
 	@$(CHANGELOG) md --out=CHANGELOG.md
 
+# gotests commands
+
 .PHONY: gotests-check #             -- Checks if gotests installed
 gotests-check:
 	@ if ! which $(GOTESTS) > /dev/null; then \
@@ -135,6 +167,8 @@ gotests-check:
 gotests-generate: dummy-generate-test
 	@$(GOTESTS) -all -template testify $(SRC_DIR)/$(GOTESTS_GENERATE_ARGS) >> $(SRC_DIR)/$(basename $(GOTESTS_GENERATE_ARGS))$(TEST_SUFFIX)
 
+# manage remotes commands
+
 .PHONY: push-bitbucket #            -- Pushes to bitbucket remote
 push-bitbucket: dummy-push-bitbucket
 	@$(GIT) push -u bitbucket $(PUSH_BITBUCKET_ARGS)
@@ -142,3 +176,41 @@ push-bitbucket: dummy-push-bitbucket
 .PHONY: push-origin #               -- Pushes to bitbucket remote
 push-origin: dummy-push-origin
 	@$(GIT) push -u origin $(PUSH_ORIGIN_ARGS)
+
+# migrate commands
+
+.PHONY: migrate-build
+migrate-build:
+	@$(GO) -o $(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DW_MIGRATIONS_SRC_DIR)/main.go
+
+.PHONY: migrate-create-go
+migrate-create-go:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(CREATE_GO_COMMAND) $(MIGRATE_CREATE_GO_ARGS)
+
+.PHONY: migrate-init
+migrate-init:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(INIT_COMMAND)
+
+.PHONY: migrate-migrate
+migrate-migrate:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(MIGRATE_COMMAND)
+
+.PHONY: migrate-rollback
+migrate-rollback:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(ROLLBACK_COMMAND)
+
+.PHONY: migrate-lock
+migrate-lock:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(LOCK_COMMAND)
+
+.PHONY: migrate-unlock
+migrate-unlock:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(UNLOCK_COMMAND)
+
+.PHONY: migrate-status
+migrate-status:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(STATUS_COMMAND)
+
+.PHONY: migrate-mark-applied
+migrate-mark-applied:
+	@$(BIN_DIR)/$(DW_MIGRATIONS_BIN_DIR)/$(DW_MIGRATIONS_BUILD_TARGET) $(DB_COMMAND) $(MARK_APPLIED)
